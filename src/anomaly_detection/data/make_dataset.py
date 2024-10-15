@@ -37,7 +37,8 @@ def load_data(
     month_dict: Optional[dict] = None,
     path: Optional[str] = None,
     file_name: Optional[str] = None,
-):
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+
     if save is None:
         save = SAVE
     if month_dict is None:
