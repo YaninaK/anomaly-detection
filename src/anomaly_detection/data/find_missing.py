@@ -16,19 +16,25 @@ logger = logging.getLogger(__name__)
 __all__ = ["find_missing_records"]
 
 SAVE = False
-FILE_PATH = "results/missing_data.xlsx"
+PATH = ""
+FILE_NAME = "results/missing_data.xlsx"
 
 
-def get_missing_records(
-    data: pd.DataFrame, save: Optional[bool] = None, file_path: Optional[str] = None
+def find_missing_records(
+    data: pd.DataFrame,
+    save: Optional[bool] = None,
+    path: Optional[str] = None,
+    file_name: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Выявляет нулевые значения показаний за тепловую энергию в отопительный период (октябрь-апрель)
     """
     if save is None:
         save = SAVE
-    if file_path is None:
-        file_path = FILE_PATH
+    if path is None:
+        path = PATH
+    if file_name is None:
+        file_name = f"{path}{FILE_NAME}"
 
     cond1 = data["Период потребления"].apply(lambda x: x.month not in range(5, 10))
     df = data[cond1].pivot_table(
@@ -69,6 +75,6 @@ def get_missing_records(
     ] = np.nan
 
     if save:
-        missing_data.iloc[:, :-1].to_excel(file_path)
+        missing_data.iloc[:, :-1].to_excel(file_name)
 
     return missing_data
