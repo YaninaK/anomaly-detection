@@ -17,7 +17,7 @@ __all__ = ["find_missing_records"]
 
 SAVE = False
 PATH = ""
-FILE_NAME = "results/missing_data.xlsx"
+FILE_NAMES = ["results/missing_data.xlsx", "results/uninvoiced_buildings.xlsx"]
 
 
 def find_missing_records(
@@ -34,7 +34,7 @@ def find_missing_records(
     if path is None:
         path = PATH
     if file_name is None:
-        file_name = f"{path}{FILE_NAME}"
+        file_name = f"{path}{FILE_NAMES[0]}"
 
     cond1 = data["Период потребления"].apply(lambda x: x.month not in range(5, 10))
     df = data[cond1].pivot_table(
@@ -78,3 +78,39 @@ def find_missing_records(
         missing_data.iloc[:, :-1].to_excel(file_name)
 
     return missing_data
+
+
+def get_uninvoiced_buildings(
+    data: pd.DataFrame,
+    buildings: pd.DataFrame,
+    save: Optional[bool] = None,
+    path: Optional[str] = None,
+    file_name: Optional[str] = None,
+) -> pd.DataFrame:
+    """
+    Выявляет объекты без данных учета теплоэнергии в разрезе типов объектов.
+    """
+    if save is None:
+        save = SAVE
+    if path is None:
+        path = PATH
+    if file_name is None:
+        file_name = f"{path}{FILE_NAMES[1]}"
+
+    data_addr = (
+        data.groupby(["Тип объекта", "Адрес объекта 2"])["Текущее потребление, Гкал"]
+        .sum()
+        .reset_index()
+    )
+    df = buildings.merge(
+        data_addr,
+        how="left",
+        left_on=["Тип Объекта", "Адрес объекта 2"],
+        right_on=["Тип объекта", "Адрес объекта 2"],
+    )
+    uninvoiced_buildings = df[df["Тип объекта"].isnull()].iloc[:, :-2]
+
+    if save:
+        uninvoiced_buildings.to_excel(file_name)
+
+    return uninvoiced_buildings
