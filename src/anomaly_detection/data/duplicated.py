@@ -36,5 +36,12 @@ def get_equal_values(
         .groupby(["Адрес объекта 2"])["Текущее потребление, Гкал"]
         .transform(lambda x: x.duplicated(keep=False))
     )
+    equal_values = (
+        data[cond1 & cond2]
+        .sort_values(["Адрес объекта 2", "Период потребления"])
+        .iloc[:, :-1]
+    )
+    if save:
+        equal_values.to_excel(file_name)
 
-    return data[cond1 & cond2].sort_values(["Адрес объекта 2", "Период потребления"])
+    return equal_values
