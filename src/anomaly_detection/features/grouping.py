@@ -58,7 +58,7 @@ class Grouping:
         ind_to_drop = df[
             (df["Общая площадь объекта"] < 1) | (df["Общая площадь объекта"].isnull())
         ].index
-        df = df.drop(ind_to_drop).reset_index()
+        df = df.drop(ind_to_drop).reset_index(drop=True)
 
         return df
 
