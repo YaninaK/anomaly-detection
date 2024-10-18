@@ -21,7 +21,7 @@ N_PERIODS = 24
 PATH = ""
 FILE_NAMES = [
     "results/under_medians.pickle",
-    "results/under_medians.pickle",
+    "results/over_medians.pickle",
     "results/underconsumption.xlsx",
     "results/overconsumption.xlsx",
 ]
