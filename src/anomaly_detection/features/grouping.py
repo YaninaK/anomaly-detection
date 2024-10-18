@@ -49,14 +49,13 @@ class Grouping:
             ],
             labels=self.year_labels,
         )
-        df.merge(
+        df = df.merge(
             data[data["Тип объекта"] == "Многоквартирный дом"]
             .groupby("Адрес объекта 2", as_index=False)["Вид энерг-а ГВС"]
             .first(),
             how="right",
             left_on="Адрес объекта 2",
             right_on="Адрес объекта 2",
-            inplace=True,
         )
 
         return df
