@@ -24,7 +24,9 @@ class Grouping:
             "2011-2024 гг.",
         ]
 
-    def fit_transform(self, buildings: pd.DataFrame) -> pd.DataFrame:
+    def fit_transform(
+        self, data: pd.DataFrame, buildings: pd.DataFrame
+    ) -> pd.DataFrame:
         """
         Для типа объекта Многоквартирный дом создает группу этажность объекта
         и группу год постройки
@@ -47,6 +49,16 @@ class Grouping:
             ],
             labels=self.year_labels,
         )
+        df.merge(
+            data[data["Тип объекта"] == "Многоквартирный дом"]
+            .groupby("Адрес объекта 2", as_index=False)["Вид энерг-а ГВС"]
+            .first(),
+            how="right",
+            left_on="Адрес объекта 2",
+            right_on="Адрес объекта 2",
+            inplace=True,
+        )
+
         return df
 
     def fillnan_construction_date(self, df: pd.DataFrame) -> pd.DataFrame:
