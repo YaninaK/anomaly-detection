@@ -88,8 +88,9 @@ def get_outlers(
         overconsumption.loc[df["Адрес объекта 2"].isin(over_medians_addr), period] = (
             df.loc[df["Адрес объекта 2"].isin(over_medians_addr), period]
         )
-        if save:
-            underconsumption.to_excel(file_name_underconsumption)
-            overconsumption.to_excel(file_name_overconsumption)
+
+    if save:
+        underconsumption.to_excel(file_name_underconsumption)
+        overconsumption.to_excel(file_name_overconsumption)
 
     return under_medians, over_medians, underconsumption, overconsumption
