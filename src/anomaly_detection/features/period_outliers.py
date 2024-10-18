@@ -6,6 +6,7 @@ sys.path.append(os.path.join(os.getcwd(), "src", "anomaly_detection"))
 
 
 import logging
+import pickle
 from typing import Optional, Tuple
 
 import numpy as np
@@ -18,7 +19,12 @@ SAVE = False
 THRESHOLD = 0.25
 N_PERIODS = 24
 PATH = ""
-FILE_NAMES = ["results/underconsumption.xlsx", "results/overconsumption.xlsx"]
+FILE_NAMES = [
+    "results/under_medians.pickle",
+    "results/under_medians.pickle",
+    "results/underconsumption.xlsx",
+    "results/overconsumption.xlsx",
+]
 
 
 def get_outlers(
@@ -27,6 +33,8 @@ def get_outlers(
     n_periods: Optional[int] = None,
     save: Optional[bool] = None,
     path: Optional[str] = None,
+    file_name_under_medians: Optional[str] = None,
+    file_name_over_medians: Optional[str] = None,
     file_name_underconsumption: Optional[str] = None,
     file_name_overconsumption: Optional[str] = None,
 ) -> Tuple[dict, dict, pd.DataFrame, pd.DataFrame]:
@@ -48,10 +56,14 @@ def get_outlers(
         save = SAVE
     if path is None:
         path = PATH
+    if file_name_under_medians is None:
+        file_name_under_medians = f"{path}{FILE_NAMES[0]}"
+    if file_name_over_medians is None:
+        file_name_over_medians = f"{path}{FILE_NAMES[1]}"
     if file_name_underconsumption is None:
-        file_name_underconsumption = f"{path}{FILE_NAMES[0]}"
+        file_name_underconsumption = f"{path}{FILE_NAMES[2]}"
     if file_name_overconsumption is None:
-        file_name_overconsumption = f"{path}{FILE_NAMES[1]}"
+        file_name_overconsumption = f"{path}{FILE_NAMES[3]}"
 
     ratio = (df.iloc[:, -n_periods:].values.T / df["Общая площадь объекта"].values).T
     df_ratio = pd.concat(
@@ -90,6 +102,11 @@ def get_outlers(
         )
 
     if save:
+        with open(file_name_under_medians, "wb") as f:
+            pickle.dump(under_medians, f)
+
+        with open(file_name_under_medians, "wb") as f:
+            pickle.dump(over_medians, f)
         underconsumption.to_excel(file_name_underconsumption)
         overconsumption.to_excel(file_name_overconsumption)
 
