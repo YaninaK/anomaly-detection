@@ -99,7 +99,7 @@ class Grouping:
             )
             .replace(0, np.nan)
             .reset_index(),
-            how="left",
+            how="right",
             left_on="Адрес объекта 2",
             right_on="Адрес объекта 2",
         )
