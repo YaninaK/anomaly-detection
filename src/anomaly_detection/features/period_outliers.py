@@ -1,3 +1,10 @@
+import os
+import sys
+
+sys.path.append(os.getcwd())
+sys.path.append(os.path.join(os.getcwd(), "src", "anomaly_detection"))
+
+
 import logging
 from typing import Optional, Tuple
 
