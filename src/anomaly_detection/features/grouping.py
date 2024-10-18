@@ -96,7 +96,6 @@ class Grouping:
                 index="Адрес объекта 2",
                 columns="Период потребления",
                 values="Текущее потребление, Гкал",
-                dropna=False,
             )
             .replace(0, np.nan)
             .reset_index(),
