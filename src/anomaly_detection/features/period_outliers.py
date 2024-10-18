@@ -105,7 +105,7 @@ def get_outlers(
         with open(file_name_under_medians, "wb") as f:
             pickle.dump(under_medians, f)
 
-        with open(file_name_under_medians, "wb") as f:
+        with open(file_name_over_medians, "wb") as f:
             pickle.dump(over_medians, f)
         underconsumption.to_excel(file_name_underconsumption)
         overconsumption.to_excel(file_name_overconsumption)
