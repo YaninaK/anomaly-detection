@@ -6,7 +6,7 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-SAVE = True
+SAVE = False
 
 THRESHOLD = 0.25
 N_PERIODS = 24
