@@ -97,9 +97,16 @@ def get_outlers(
         underconsumption.loc[df["Адрес объекта 2"].isin(under_medians_addr), period] = (
             df.loc[df["Адрес объекта 2"].isin(under_medians_addr), period]
         )
+        a = underconsumption.iloc[:, -n_periods:].notnull().sum(axis=1)
+        ind = a[a > 0].index
+        underconsumption = underconsumption.loc[ind]
+
         overconsumption.loc[df["Адрес объекта 2"].isin(over_medians_addr), period] = (
             df.loc[df["Адрес объекта 2"].isin(over_medians_addr), period]
         )
+        a = overconsumption.iloc[:, -n_periods:].notnull().sum(axis=1)
+        ind = a[a > 0].index
+        overconsumption = overconsumption.loc[ind]
 
     if save:
         with open(file_name_under_medians, "wb") as f:
