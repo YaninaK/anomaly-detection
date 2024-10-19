@@ -12,6 +12,18 @@ class Preprocess:
     def fit_transform(
         self, data: pd.DataFrame, buildings: pd.DataFrame
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        1. Удаляет дублирование данных.
+        2. Создает признак Адрес объекта 2 для совмещения базы данных транзакций с базой объектов.
+        3. Удаляет строковые значения признака Этажность объекта
+        4. Удаляет строковые значения признака Дата постройки
+        5. Переводит значения признака Дата постройки в формат datetime
+        6. Заполняет пропуски признака Дата постройки максимальным значением
+            в разрезе объектов, расположенных по данному адресу.
+        """
+        ind = data[data.iloc[:, 1:].duplicated()].index
+        data.drop(ind, inplace=True)
+
         data = self.adjust_address_data(data)
         buildings = self.clean_buildings(buildings)
         buildings = self.adjust_address_buildings(buildings)
