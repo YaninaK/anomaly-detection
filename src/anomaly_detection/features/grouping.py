@@ -56,9 +56,10 @@ class Grouping:
         )
         df = self.add_data_info(data, df)
         ind_to_drop = df[df["Общая площадь объекта"] < 1].index
+        dropped = df.loc[ind_to_drop]
         df.drop(ind_to_drop, inplace=True)
 
-        return df
+        return df, dropped
 
     def fillnan_construction_date(self, df: pd.DataFrame) -> pd.DataFrame:
         """
