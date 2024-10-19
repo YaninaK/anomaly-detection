@@ -49,7 +49,7 @@ def find_missing_records(
 
     cond = data["Период потребления"].apply(lambda x: x.month not in range(5, 10))
     df = data[cond].pivot_table(
-        index=["Адрес объекта 2", "Тип объекта"],
+        index=["Адрес объекта", "Тип объекта"],
         columns="Период потребления",
         values="Текущее потребление, Гкал",
     )
