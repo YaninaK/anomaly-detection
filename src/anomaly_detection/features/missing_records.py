@@ -21,7 +21,7 @@ SAVE = False
 PATH = ""
 FILE_NAMES = [
     "results/missing_records.xlsx",
-    "results/uninvoiced_buildings.xlsx",
+    "results/uninvoices_objects.xlsx",
 ]
 
 
@@ -55,3 +55,38 @@ def select_missing_records(
         )
 
     return missing_records
+
+
+def select_uninvoices_objects(
+    df: pd.DataFrame,
+    buildings: pd.DataFrame,
+    save: Optional[bool] = None,
+    path: Optional[str] = None,
+    file_name: Optional[str] = None,
+) -> pd.DataFrame:
+    """
+    Выявляет объекты, по которым нет данных учета теплоэнергии.
+    """
+    if save is None:
+        save = SAVE
+    if path is None:
+        path = PATH
+    if file_name is None:
+        file_name = f"{path}{FILE_NAMES[0]}"
+
+    df1 = df.reset_index()
+    uninvoiced_objects = sorted(
+        list(
+            set(zip(buildings["Адрес объекта 2"], buildings["Тип Объекта"]))
+            - set(zip(df1["Адрес объекта 2"], df1["Тип объекта"]))
+        )
+    )
+    merge_basis = ["Адрес объекта 2", "Тип Объекта"]
+    uninvoices_objects = pd.DataFrame(uninvoiced_objects, columns=merge_basis).merge(
+        buildings, how="left", on=merge_basis
+    )[buildings.columns]
+
+    if save:
+        uninvoices_objects.iloc[:, :-1].to_excel(file_name)
+
+    return uninvoices_objects
