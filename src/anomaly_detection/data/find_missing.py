@@ -52,7 +52,7 @@ def find_missing_records(
         file_name_df = f"{path}{FILE_NAMES[1]}"
 
     if all_periods:
-        cond = []
+        cond = data["Период потребления"].notnull()
     else:
         cond = data["Период потребления"].apply(lambda x: x.month not in range(5, 10))
 
