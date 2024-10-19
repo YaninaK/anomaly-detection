@@ -25,7 +25,7 @@ FILE_NAMES = [
 ]
 
 
-def get_missing_records(
+def select_missing_records(
     df: pd.DataFrame,
     all_periods: Optional[bool] = None,
     save: Optional[bool] = None,
@@ -50,6 +50,8 @@ def get_missing_records(
     missing_records = df[cond]
 
     if save:
-        missing_records.to_excel(file_name)
+        missing_records.reset_index().drop("Адрес объекта 2", axis=1).to_excel(
+            file_name
+        )
 
     return missing_records
