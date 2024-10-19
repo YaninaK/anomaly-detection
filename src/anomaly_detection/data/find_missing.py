@@ -4,9 +4,9 @@ import sys
 sys.path.append(os.getcwd())
 sys.path.append(os.path.join(os.getcwd(), "src", "anomaly_detection"))
 
-
 import logging
-from typing import Optional
+import pickle
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -17,67 +17,62 @@ __all__ = ["find_missing_records"]
 
 SAVE = False
 PATH = ""
-FILE_NAMES = ["results/missing_data.xlsx", "results/uninvoiced_buildings.xlsx"]
+FILE_NAMES = [
+    "results/missing_records_addr.pickle",
+    "results/missing_records.xlsx",
+    "results/uninvoiced_buildings.xlsx",
+]
 
 
 def find_missing_records(
     data: pd.DataFrame,
     save: Optional[bool] = None,
     path: Optional[str] = None,
-    file_name: Optional[str] = None,
-) -> pd.DataFrame:
+    file_name_addr: Optional[str] = None,
+    file_name_df: Optional[str] = None,
+) -> Tuple[dict, pd.DataFrame]:
     """
-    Выявляет нулевые значения показаний за тепловую энергию в отопительный период (октябрь-апрель)
+    Выявляет нулевые значения показаний за тепловую энергию в отопительный период (октябрь-апрель).
+    Возвращает:
+    missing_records_addr: dict  - словарь со списком адресов и типов объектов за каждый период
+    missing_records_df: pd.DataFrame - датафрейм с адресами, типами объектов и пропусками за каждый период.
+
     """
     if save is None:
         save = SAVE
     if path is None:
         path = PATH
-    if file_name is None:
-        file_name = f"{path}{FILE_NAMES[0]}"
+    if file_name_addr is None:
+        file_name_addr = f"{path}{FILE_NAMES[0]}"
+    if file_name_df is None:
+        file_name_df = f"{path}{FILE_NAMES[1]}"
 
-    cond1 = data["Период потребления"].apply(lambda x: x.month not in range(5, 10))
-    df = data[cond1].pivot_table(
-        index="Адрес объекта",
+    cond = data["Период потребления"].apply(lambda x: x.month not in range(5, 10))
+    df = data[cond].pivot_table(
+        index=["Адрес объекта 2", "Тип объекта"],
         columns="Период потребления",
         values="Текущее потребление, Гкал",
     )
     df.replace(0, np.nan, inplace=True)
+    missing_records_df = df[df.isnull().sum(axis=1) > 0]
 
-    r_records = df.count(axis=1)
-    address_missing_values = r_records[r_records < len(df.columns)].index
-    cond2 = data["Адрес объекта"].isin(address_missing_values)
+    missing_records_addr = {}
+    for period in missing_records_df.columns:
+        missing_records_addr[period] = [
+            (address, object_type)
+            for (address, object_type) in missing_records_df.loc[
+                missing_records_df[period].isnull(), period
+            ].index
+        ]
 
-    df1 = data[cond1 & cond2].groupby(["Период потребления", "Адрес объекта"]).last()
-    df2 = df.loc[address_missing_values].unstack()
-
-    cols = [col for col in data.columns[1:] if col != "Дата текущего показания"]
-    missing_data = (
-        pd.concat([df1, df2], axis=1)
-        .reset_index()[cols]
-        .sort_values(["Адрес объекта", "Период потребления"], ascending=[True, False])
-        .reset_index(drop=True)
-    )[cols]
-
-    for col in [
-        "Подразделение",
-        "№ ОДПУ",
-        "Вид энерг-а ГВС",
-        "Тип объекта",
-        "Адрес объекта 2",
-    ]:
-        missing_data[col] = missing_data.groupby("Адрес объекта")[col].transform(
-            lambda x: x.ffill().bfill()
-        )
-
-    missing_data.loc[
-        missing_data["Текущее потребление, Гкал"] == 0, "Текущее потребление, Гкал"
-    ] = np.nan
+    missing_records_df.reset_index(inplace=True)
 
     if save:
-        missing_data.iloc[:, :-1].to_excel(file_name)
+        with open(file_name_addr, "wb") as f:
+            pickle.dump(file_name_addr, f)
+        missing_records_df.to_excel(file_name_df)
 
-    return missing_data
+    return missing_records_addr, missing_records_df
 
 
 def get_uninvoiced_buildings(
@@ -95,7 +90,7 @@ def get_uninvoiced_buildings(
     if path is None:
         path = PATH
     if file_name is None:
-        file_name = f"{path}{FILE_NAMES[1]}"
+        file_name = f"{path}{FILE_NAMES[2]}"
 
     data_addr = (
         data.groupby(["Тип объекта", "Адрес объекта 2"])["Текущее потребление, Гкал"]
