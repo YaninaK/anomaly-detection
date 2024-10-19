@@ -57,7 +57,7 @@ def select_missing_records(
     return missing_records
 
 
-def select_uninvoices_objects(
+def select_uninvoiced_objects(
     df: pd.DataFrame,
     buildings: pd.DataFrame,
     save: Optional[bool] = None,
