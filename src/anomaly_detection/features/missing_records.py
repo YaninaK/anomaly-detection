@@ -51,7 +51,7 @@ def select_missing_records(
 
     if save:
         missing_records.reset_index().drop("Адрес объекта 2", axis=1).to_excel(
-            file_name
+            file_name, index=False
         )
 
     return missing_records
@@ -72,7 +72,7 @@ def select_uninvoiced_objects(
     if path is None:
         path = PATH
     if file_name is None:
-        file_name = f"{path}{FILE_NAMES[0]}"
+        file_name = f"{path}{FILE_NAMES[1]}"
 
     df1 = df.reset_index()
     uninvoiced_objects = sorted(
@@ -87,6 +87,6 @@ def select_uninvoiced_objects(
     )[buildings.columns]
 
     if save:
-        uninvoiced_objects.iloc[:, :-1].to_excel(file_name)
+        uninvoiced_objects.iloc[:, :-1].to_excel(file_name, index=False)
 
     return uninvoiced_objects
