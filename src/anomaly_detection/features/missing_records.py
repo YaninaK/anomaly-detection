@@ -21,7 +21,7 @@ SAVE = False
 PATH = ""
 FILE_NAMES = [
     "results/missing_records.xlsx",
-    "results/uninvoices_objects.xlsx",
+    "results/uninvoiced_objects.xlsx",
 ]
 
 
@@ -82,11 +82,11 @@ def select_uninvoiced_objects(
         )
     )
     merge_basis = ["Адрес объекта 2", "Тип Объекта"]
-    uninvoices_objects = pd.DataFrame(uninvoiced_objects, columns=merge_basis).merge(
+    uninvoiced_objects = pd.DataFrame(uninvoiced_objects, columns=merge_basis).merge(
         buildings, how="left", on=merge_basis
     )[buildings.columns]
 
     if save:
-        uninvoices_objects.iloc[:, :-1].to_excel(file_name)
+        uninvoiced_objects.iloc[:, :-1].to_excel(file_name)
 
-    return uninvoices_objects
+    return uninvoiced_objects
