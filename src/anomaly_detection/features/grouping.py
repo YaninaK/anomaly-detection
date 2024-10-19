@@ -55,10 +55,8 @@ class Grouping:
             labels=self.year_labels,
         )
         df = self.add_data_info(data, df)
-        ind_to_drop = df[
-            (df["Общая площадь объекта"] < 1) | (df["Общая площадь объекта"].isnull())
-        ].index
-        df = df.drop(ind_to_drop).reset_index(drop=True)
+        ind_to_drop = df[df["Общая площадь объекта"] < 1].index
+        df.drop(ind_to_drop, inplace=True)
 
         return df
 
@@ -86,26 +84,13 @@ class Grouping:
         Оставляет только объекты с данными по потреблению теплоэнергии.
 
         """
-        cond = data["Тип объекта"] == "Многоквартирный дом"
+        df1 = data.reset_index()
+        cond = df1["Тип объекта"] == "Многоквартирный дом"
+
+        cols = ["Адрес объекта 2", "Вид энерг-а ГВС"] + data.columns.tolist()
         df = df.merge(
-            data[cond]
-            .groupby("Адрес объекта 2", as_index=False)["Вид энерг-а ГВС"]
-            .first(),
+            df1[cond][cols],
             how="right",
-            left_on="Адрес объекта 2",
-            right_on="Адрес объекта 2",
-        )
-        df = df.merge(
-            data[cond]
-            .pivot_table(
-                index="Адрес объекта 2",
-                columns="Период потребления",
-                values="Текущее потребление, Гкал",
-            )
-            .replace(0, np.nan)
-            .reset_index(),
-            how="right",
-            left_on="Адрес объекта 2",
-            right_on="Адрес объекта 2",
+            on="Адрес объекта 2",
         )
         return df
