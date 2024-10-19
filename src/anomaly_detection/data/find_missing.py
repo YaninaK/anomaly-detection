@@ -22,10 +22,12 @@ FILE_NAMES = [
     "results/missing_records.xlsx",
     "results/uninvoiced_buildings.xlsx",
 ]
+ALL_PERIODS = False
 
 
 def find_missing_records(
     data: pd.DataFrame,
+    all_periods: Optional[bool] = None,
     save: Optional[bool] = None,
     path: Optional[str] = None,
     file_name_addr: Optional[str] = None,
@@ -38,6 +40,8 @@ def find_missing_records(
     missing_records_df: pd.DataFrame - датафрейм с адресами, типами объектов и пропусками за каждый период.
 
     """
+    if all_periods is None:
+        all_periods = ALL_PERIODS
     if save is None:
         save = SAVE
     if path is None:
@@ -47,7 +51,11 @@ def find_missing_records(
     if file_name_df is None:
         file_name_df = f"{path}{FILE_NAMES[1]}"
 
-    cond = data["Период потребления"].apply(lambda x: x.month not in range(5, 10))
+    if all_periods:
+        cond = []
+    else:
+        cond = data["Период потребления"].apply(lambda x: x.month not in range(5, 10))
+
     df = data[cond].pivot_table(
         index=["Адрес объекта", "Тип объекта"],
         columns="Период потребления",
