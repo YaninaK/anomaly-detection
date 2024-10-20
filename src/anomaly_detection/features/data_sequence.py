@@ -18,16 +18,20 @@ def generate_data_sequence(data: pd.DataFrame) -> pd.DataFrame:
                     data["Адрес объекта"],
                     data["Тип объекта"],
                     data["№ ОДПУ"],
+                    data["Вид энерг-а ГВС"],
                     data["Адрес объекта 2"],
                 )
             )
         )
     )
-
-    merge_basis = ["Адрес объекта", "Тип объекта", "№ ОДПУ", "Адрес объекта 2"]
-    df = pd.DataFrame(combined_index, columns=merge_basis).merge(
-        data.groupby(merge_basis)["Вид энерг-а ГВС"].first(), how="left", on=merge_basis
-    )
+    merge_basis = [
+        "Адрес объекта",
+        "Тип объекта",
+        "№ ОДПУ",
+        "Вид энерг-а ГВС",
+        "Адрес объекта 2",
+    ]
+    df = pd.DataFrame(combined_index, columns=merge_basis)
     periods = sorted(data["Период потребления"].unique().tolist())
     for period in periods:
         current_period = (
@@ -40,6 +44,6 @@ def generate_data_sequence(data: pd.DataFrame) -> pd.DataFrame:
         )
         df = df.merge(current_period, how="left", on=merge_basis)
 
-    df.set_index(merge_basis + ["Вид энерг-а ГВС"], inplace=True)
+    df.set_index(merge_basis, inplace=True)
 
     return df
