@@ -36,8 +36,7 @@ def get_equal_values(
     if file_name is None:
         file_name = f"{path}{FILE_NAME}"
 
-    data.replace(0, np.nan, inplace=True)
-    data["Вид энерг-а ГВС"] = np.where(data["Вид энерг-а ГВС"] == "ГВС-ИТП", 1, 0)
+    data["Текущее потребление, Гкал"].replace(0, np.nan, inplace=True)
     combined_index = [
         "Адрес объекта",
         "Тип объекта",
@@ -60,6 +59,6 @@ def get_equal_values(
     )
 
     if save:
-        equal_values.to_excel(file_name)
+        equal_values.to_excel(file_name, index=False)
 
     return equal_values
