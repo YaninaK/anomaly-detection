@@ -21,6 +21,13 @@ def get_equal_values(
 ) -> pd.DataFrame:
     """
     Выявляет равные значения показаний в течение нескольких расчетных периодов
+    у объекта с индексом:
+    [
+        "Адрес объекта",
+        "Тип объекта",
+        "№ ОДПУ",
+        "Вид энерг-а ГВС",
+    ]
     """
     if save is None:
         save = SAVE
@@ -30,10 +37,16 @@ def get_equal_values(
         file_name = f"{path}{FILE_NAME}"
 
     data.replace(0, np.nan, inplace=True)
+    combined_index = [
+        "Адрес объекта",
+        "Тип объекта",
+        "№ ОДПУ",
+        "Вид энерг-а ГВС",
+    ]
     cond1 = data["Текущее потребление, Гкал"].notnull()
     cond2 = (
         data[cond1]
-        .groupby(["Адрес объекта 2"])["Текущее потребление, Гкал"]
+        .groupby(combined_index)["Текущее потребление, Гкал"]
         .transform(lambda x: x.duplicated(keep=False))
     )
     equal_values = (
@@ -41,6 +54,10 @@ def get_equal_values(
         .sort_values(["Адрес объекта 2", "Период потребления"])
         .iloc[:, :-1]
     )
+    equal_values["Вид энерг-а ГВС"] = np.where(
+        equal_values["Вид энерг-а ГВС"] == 1, "ГВС-ИТП", None
+    )
+
     if save:
         equal_values.to_excel(file_name)
 
