@@ -37,6 +37,7 @@ def get_equal_values(
         file_name = f"{path}{FILE_NAME}"
 
     data.replace(0, np.nan, inplace=True)
+    data["Вид энерг-а ГВС"] = np.where(data["Вид энерг-а ГВС"] == "ГВС-ИТП", 1, 0)
     combined_index = [
         "Адрес объекта",
         "Тип объекта",
