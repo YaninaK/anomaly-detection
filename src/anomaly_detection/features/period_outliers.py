@@ -20,10 +20,8 @@ THRESHOLD = 0.25
 N_PERIODS = 24
 PATH = ""
 FILE_NAMES = [
-    "results/under_medians.pickle",
-    "results/over_medians.pickle",
-    "results/underconsumption.xlsx",
-    "results/overconsumption.xlsx",
+    "results/outliers_addr.pickle",
+    "results/consumption_mask.xlsx",
 ]
 
 
@@ -33,11 +31,9 @@ def get_outlers(
     n_periods: Optional[int] = None,
     save: Optional[bool] = None,
     path: Optional[str] = None,
-    file_name_under_medians: Optional[str] = None,
-    file_name_over_medians: Optional[str] = None,
-    file_name_underconsumption: Optional[str] = None,
-    file_name_overconsumption: Optional[str] = None,
-) -> Tuple[dict, dict, pd.DataFrame, pd.DataFrame]:
+    file_name_outliers_addr: Optional[str] = None,
+    file_name_consumption_mask: Optional[str] = None,
+) -> Tuple[dict, pd.DataFrame]:
     """
     Для типов объекта «Многоквартирный дом» выявляет аномально низкое/высокое (отклонение более 25%)
     потребление объекта в конкретном месяце по сравнению с аналогичными объектами по критериям:
@@ -46,6 +42,11 @@ def get_outlers(
     - этажность (по группам 1-2 этажа, 3-4 этажа, 5-9 этажей,10-12 этажей, 13 и более этажей),
     - площадь (±10%),
     - наличие ГВС ИТП (горячей воды, учитываемой тем же прибором).
+
+    consumption_mask:
+    - 1: аномально низкое потребление (отклонение более 25%)
+    - 2: медианное потребление +/- 25%
+    - 3: аномально высокое потребление (отклонение более 25%)
 
     """
     if threshold is None:
@@ -56,67 +57,45 @@ def get_outlers(
         save = SAVE
     if path is None:
         path = PATH
-    if file_name_under_medians is None:
-        file_name_under_medians = f"{path}{FILE_NAMES[0]}"
-    if file_name_over_medians is None:
-        file_name_over_medians = f"{path}{FILE_NAMES[1]}"
-    if file_name_underconsumption is None:
-        file_name_underconsumption = f"{path}{FILE_NAMES[2]}"
-    if file_name_overconsumption is None:
-        file_name_overconsumption = f"{path}{FILE_NAMES[3]}"
+    if file_name_outliers_addr is None:
+        file_name_outliers_addr = f"{path}{FILE_NAMES[0]}"
+    if file_name_consumption_mask is None:
+        file_name_underconsumption = f"{path}{FILE_NAMES[1]}"
 
-    df.iloc[:, -n_periods:] = np.where(df.iloc[:, -n_periods:] == 0, np.nan, df.iloc[:, -n_periods:])
+    df.reset_index(drop=True, inplace=True)
+    df.iloc[:, -n_periods:] = np.where(
+        df.iloc[:, -n_periods:] == 0, np.nan, df.iloc[:, -n_periods:]
+    )
     ratio = (df.iloc[:, -n_periods:].values.T / df["Общая площадь объекта"].values).T
     df_ratio = pd.concat(
         [df.iloc[:, :-n_periods], pd.DataFrame(ratio, columns=df.columns[-n_periods:])],
         axis=1,
     )
-
-    under_medians = {}
-    over_medians = {}
-
-    underconsumption = df.copy()
-    overconsumption = df.copy()
-    underconsumption.iloc[:, -n_periods:] = np.nan
-    overconsumption.iloc[:, -n_periods:] = np.nan
+    outliers_addr = {}
+    consumption_mask = df.copy()
+    consumption_mask.iloc[:, -n_periods:] = np.nan
 
     for period in df_ratio.columns[-n_periods:]:
         medians = df_ratio.groupby(
             ["Группа год постройки", "Группа этажность объекта", "Вид энерг-а ГВС"]
         )[period].transform(lambda x: x.median())
 
-        under_medians_addr = df_ratio[medians > df_ratio[period] / (1 - threshold)][
-            "Адрес объекта 2"
-        ].tolist()
-        over_medians_addr = df_ratio[medians < df_ratio[period] / (1 + threshold)][
-            "Адрес объекта 2"
-        ].tolist()
+        cond_under = medians > df_ratio[period] / (1 - threshold)
+        cond_over = medians < df_ratio[period] / (1 + threshold)
 
-        under_medians[period] = under_medians_addr
-        over_medians[period] = over_medians_addr
-
-        underconsumption.loc[df["Адрес объекта 2"].isin(under_medians_addr), period] = (
-            df.loc[df["Адрес объекта 2"].isin(under_medians_addr), period]
+        outliers_addr[period] = {
+            "underconsumption": df_ratio[cond_under]["Адрес объекта 2"].tolist(),
+            "overconsumption": df_ratio[cond_over]["Адрес объекта 2"].tolist(),
+        }
+        consumption_mask[period] = np.where(
+            cond_under,
+            1,
+            np.where(cond_over, 3, np.where(df_ratio[period].notnull(), 2, np.nan)),
         )
-        overconsumption.loc[df["Адрес объекта 2"].isin(over_medians_addr), period] = (
-            df.loc[df["Адрес объекта 2"].isin(over_medians_addr), period]
-        )
-
-    a = underconsumption.iloc[:, -n_periods:].notnull().sum(axis=1)
-    ind = a[a > 0].index
-    underconsumption = underconsumption.loc[ind]
-
-    a = overconsumption.iloc[:, -n_periods:].notnull().sum(axis=1)
-    ind = a[a > 0].index
-    overconsumption = overconsumption.loc[ind]
 
     if save:
-        with open(file_name_under_medians, "wb") as f:
-            pickle.dump(under_medians, f)
+        with open(file_name_outliers_addr, "wb") as f:
+            pickle.dump(outliers_addr, f)
+        consumption_mask.to_excel(file_name_underconsumption)
 
-        with open(file_name_over_medians, "wb") as f:
-            pickle.dump(over_medians, f)
-        underconsumption.to_excel(file_name_underconsumption)
-        overconsumption.to_excel(file_name_overconsumption)
-
-    return under_medians, over_medians, underconsumption, overconsumption
+    return outliers_addr, consumption_mask
