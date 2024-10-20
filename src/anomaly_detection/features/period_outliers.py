@@ -65,6 +65,7 @@ def get_outlers(
     if file_name_overconsumption is None:
         file_name_overconsumption = f"{path}{FILE_NAMES[3]}"
 
+    df.iloc[:, -n_periods:] = np.where(df.iloc[:, -n_periods:] == 0, np.nan, df.iloc[:, -n_periods:])
     ratio = (df.iloc[:, -n_periods:].values.T / df["Общая площадь объекта"].values).T
     df_ratio = pd.concat(
         [df.iloc[:, :-n_periods], pd.DataFrame(ratio, columns=df.columns[-n_periods:])],
