@@ -80,18 +80,17 @@ class Grouping:
 
     def add_data_info(self, data: pd.DataFrame, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Добавляет признак Вид энерг-а ГВС и данные по потреблению теплоэнергии многоквартирных
+        Добавляет ненулевые данные по потреблению теплоэнергии многоквартирных
         домов.
-        Оставляет только объекты с данными по потреблению теплоэнергии.
+        Оставляет только объекты с ненулевыми данными по потреблению теплоэнергии.
 
         """
-        df1 = data.reset_index()
-        cond = df1["Тип объекта"] == "Многоквартирный дом"
+        df1 = data[data.index.get_level_values("Тип объекта") == "Многоквартирный дом"]
+        df1 = df1[
+            (df1.isnull() | (df1 == 0)).sum(axis=1) != len(data.columns)
+        ].reset_index()
 
         cols = ["Адрес объекта 2", "Вид энерг-а ГВС"] + data.columns.tolist()
-        df = df.merge(
-            df1[cond][cols],
-            how="right",
-            on="Адрес объекта 2",
-        )
+        df = df.merge(df1[cols], how="right", on="Адрес объекта 2")
+
         return df
