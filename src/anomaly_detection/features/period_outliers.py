@@ -14,6 +14,9 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+__all__ = ["find_period_outliers"]
+
+
 SAVE = False
 
 THRESHOLD = 0.25
