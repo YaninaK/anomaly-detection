@@ -1,6 +1,7 @@
 import logging
 from typing import Optional, Tuple
 
+import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ class Preprocess:
         ind = data[data.iloc[:, 1:].duplicated()].index
         data.drop(ind, inplace=True)
 
-        data["Вид энерг-а ГВС"] = np.where(data["Вид энерг-а ГВС"]=="ГВС-ИТП", 1, 0)
+        data["Вид энерг-а ГВС"] = np.where(data["Вид энерг-а ГВС"] == "ГВС-ИТП", 1, 0)
 
         data = self.adjust_address_data(data)
         buildings = self.clean_buildings(buildings)
