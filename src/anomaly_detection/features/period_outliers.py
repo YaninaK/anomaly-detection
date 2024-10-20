@@ -78,11 +78,13 @@ def get_outlers(
     consumption_mask = df.copy()
     consumption_mask.iloc[:, -n_periods:] = np.nan
 
+    group_ind = ["Группа год постройки", "Группа этажность объекта", "Вид энерг-а ГВС"]
     for period in df_ratio.columns[-n_periods:]:
-        medians = df_ratio.groupby(
-            ["Группа год постройки", "Группа этажность объекта", "Вид энерг-а ГВС"]
-        )[period].transform(lambda x: x.median())
-
+        medians = (
+            df_ratio[group_ind + [period]]
+            .groupby(group_ind)[period]
+            .transform(lambda x: x.median())
+        )
         cond_under = medians > df_ratio[period] / (1 - threshold)
         cond_over = medians < df_ratio[period] / (1 + threshold)
 
