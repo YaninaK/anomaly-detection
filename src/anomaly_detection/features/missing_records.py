@@ -22,6 +22,7 @@ PATH = ""
 FILE_NAMES = [
     "results/missing_records.xlsx",
     "results/uninvoiced_objects.xlsx",
+    "results/nonunique_objects.xlsx",
 ]
 
 
@@ -94,3 +95,28 @@ def select_uninvoiced_objects(
         uninvoiced_objects.iloc[:, :-1].to_excel(file_name, index=False)
 
     return uninvoiced_objects
+
+
+def select_nonunique_objects(
+    buildings: pd.DataFrame,
+    save: Optional[bool] = None,
+    path: Optional[str] = None,
+    file_name: Optional[str] = None,
+) -> pd.DataFrame:
+    """
+    Выбирает неуникальные адреса объектов в разрезе типов объектов.
+    """
+    if save is None:
+        save = SAVE
+    if path is None:
+        path = PATH
+    if file_name is None:
+        file_name = f"{path}{FILE_NAMES[2]}"
+
+    nonunique = buildings[
+        buildings.duplicated(subset=["Адрес объекта", "Тип Объекта"], keep=False)
+    ]
+    if save:
+        nonunique.iloc[:, :-1].to_excel(file_name, index=False)
+
+    return nonunique
