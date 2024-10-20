@@ -50,9 +50,13 @@ def select_missing_records(
     missing_records = df[cond]
 
     if save:
-        missing_records.reset_index().drop("Адрес объекта 2", axis=1).to_excel(
-            file_name, index=False
+        missing_records_result = missing_records.reset_index().drop(
+            "Адрес объекта 2", axis=1
         )
+        missing_records_result["Вид энерг-а ГВС"] = np.where(
+            missing_records_result["Вид энерг-а ГВС"] == 1, "ГВС-ИТП", None
+        )
+        missing_records_result.to_excel(file_name, index=False)
 
     return missing_records
 
