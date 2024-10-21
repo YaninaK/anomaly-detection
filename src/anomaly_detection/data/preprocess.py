@@ -11,17 +11,28 @@ __all__ = ["preprocess_data"]
 
 class Preprocess:
     def fit_transform(
-        self, data: pd.DataFrame, buildings: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        self, data: pd.DataFrame, buildings: pd.DataFrame, temperature: pd.DataFrame
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
+        Данные о потреблении теплоэнергии
         1. Удаляет дублирование данных.
         2. В признаке Вид энерг-а ГВС переименовывает ГВС-ИТП/ None в 1/0.
         3. Создает признак Адрес объекта 2 для совмещения базы данных транзакций с базой объектов.
-        4. Удаляет строковые значения признака Этажность объекта
-        5. Удаляет строковые значения признака Дата постройки
-        6. Переводит значения признака Дата постройки в формат datetime
-        7. Заполняет пропуски признака Дата постройки максимальным значением
+
+        Тип строения, этажность, площадь, год постройки
+        1. Удаляет строковые значения признака Этажность объекта
+        2. Удаляет строковые значения признака Дата постройки
+        3. Переводит значения признака Дата постройки в формат datetime
+        4. Заполняет пропуски признака Дата постройки максимальным значением
             в разрезе объектов, расположенных по данному адресу.
+        5. Создает признак Адрес объекта 2 для совмещения базы данных транзакций с базой объектов.
+
+        Температура, продолжительность отопительного периода
+        1. Вводит бинарный признак осенне-зимний период ("ОЗП")
+        2. Вводит признак "Число дней" - Продолжительность ОЗП в сутках в отопительный период
+           либо число дней в месяце вне отопительного периода с поправкой на дату начала/ конца
+           отопительного периода.
+        3. Температура вне отопительного периода фиксируется на уровне 25 градусов С.
         """
         ind = data[data.iloc[:, 1:].duplicated()].index
         data.drop(ind, inplace=True)
@@ -32,8 +43,9 @@ class Preprocess:
         buildings = self.clean_buildings(buildings)
         buildings = self.adjust_address_buildings(buildings)
         data = self.adjust_subobjects_data(data, buildings)
+        temperature = self.preprocess_temperature_and_heating_data(temperature)
 
-        return data, buildings
+        return data, buildings, temperature
 
     def adjust_address_data(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -201,3 +213,35 @@ class Preprocess:
             ]
         ]
         return data
+
+    def preprocess_temperature_and_heating_data(
+        self, temperature: pd.DataFrame
+    ) -> pd.DataFrame:
+        """
+        1. Вводит бинарный признак осенне-зимний период ("ОЗП")
+        2. Вводит признак "Число дней" - Продолжительность ОЗП в сутках в отопительный период
+           либо число дней в месяце вне отопительного периода с поправкой на дату начала/ конца
+           отопительного периода.
+        3. Температура вне отопительного периода фиксируется на уровне 25 градусов С.
+        """
+        temp = temperature.copy()
+        temp["ОЗП"] = np.where(temp["Продолжительность ОЗП, сут."] > 0, 1, 0)
+        temp["Число дней"] = np.where(
+            temp["Продолжительность ОЗП, сут."].isnull(),
+            temp["index"].dt.days_in_month,
+            temp["Продолжительность ОЗП, сут."],
+        )
+        diff = temp["index"].dt.days_in_month - temp["Число дней"]
+
+        for t in range(len(temp) - 1):
+            if np.isnan(temp.loc[t + 1, "Продолжительность ОЗП, сут."]):
+                temp.loc[t + 1, "Число дней"] += diff[t]
+
+        for t in range(1, len(temp)):
+            if np.isnan(temp.loc[t - 1, "Продолжительность ОЗП, сут."]):
+                temp.loc[t - 1, "Число дней"] += diff[t]
+
+        temp["Тн.в, град.С"].fillna(25, inplace=True)
+        temp.set_index("index", inplace=True)
+
+        return temp[["Тн.в, град.С", "ОЗП", "Число дней"]]
