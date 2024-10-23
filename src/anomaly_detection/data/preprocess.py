@@ -4,14 +4,25 @@ from typing import Optional, Tuple
 import numpy as np
 import pandas as pd
 
+from . import OBJECT_TYPES
+
 logger = logging.getLogger(__name__)
 
 __all__ = ["preprocess_data"]
 
 
 class Preprocess:
+    def __init__(self, object_types: Optional[list] = None):
+        if object_types is None:
+            object_types = OBJECT_TYPES
+
+        self.object_types = object_types
+
     def fit_transform(
-        self, data: pd.DataFrame, buildings: pd.DataFrame, temperature: pd.DataFrame
+        self,
+        data: pd.DataFrame,
+        buildings: pd.DataFrame,
+        temperature: pd.DataFrame,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Данные о потреблении теплоэнергии
@@ -191,27 +202,33 @@ class Preprocess:
         Укрупняет адрес объекта в базе data, признак Адрес объекта 2, чтобы привести
         в соответствие с базой buildings, признак Адрес объекта 2.
         """
-        cond1_a = data["Тип объекта"] == "Многоквартирный дом"
-        cond1_b = buildings["Тип Объекта"] == "Многоквартирный дом"
-        addr = sorted(
-            list(
-                set(data[cond1_a]["Адрес объекта 2"])
-                - set(buildings[cond1_b]["Адрес объекта 2"])
-            )
-        )
-        adjusted_address = [(i.split("№")[0].replace(", Подобъект ", "")) for i in addr]
-        unreconciled = set(adjusted_address) - set(
-            buildings[cond1_b]["Адрес объекта 2"]
-        )
-        df = pd.DataFrame({"addr": addr, "adjusted_address": adjusted_address})
-        unique_addr = df.loc[~df["adjusted_address"].isin(unreconciled)]
 
-        data.loc[data["Адрес объекта"].isin(unique_addr["addr"]), "Адрес объекта 2"] = [
-            (i.split("№")[0].replace(", Подобъект ", ""))
-            for i in data.loc[
-                data["Адрес объекта"].isin(unique_addr["addr"]), "Адрес объекта"
+        for object_type in self.object_types:
+            cond1_a = data["Тип объекта"] == object_type
+            cond1_b = buildings["Тип Объекта"] == object_type
+            addr = sorted(
+                list(
+                    set(data[cond1_a]["Адрес объекта 2"])
+                    - set(buildings[cond1_b]["Адрес объекта 2"])
+                )
+            )
+            adjusted_address = [
+                (i.split("№")[0].replace(", Подобъект ", "")) for i in addr
             ]
-        ]
+            unreconciled = set(adjusted_address) - set(
+                buildings[cond1_b]["Адрес объекта 2"]
+            )
+            df = pd.DataFrame({"addr": addr, "adjusted_address": adjusted_address})
+            unique_addr = df.loc[~df["adjusted_address"].isin(unreconciled)]
+
+            data.loc[
+                data["Адрес объекта"].isin(unique_addr["addr"]), "Адрес объекта 2"
+            ] = [
+                (i.split("№")[0].replace(", Подобъект ", ""))
+                for i in data.loc[
+                    data["Адрес объекта"].isin(unique_addr["addr"]), "Адрес объекта"
+                ]
+            ]
         return data
 
     def preprocess_temperature_and_heating_data(
