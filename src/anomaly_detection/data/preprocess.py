@@ -229,6 +229,11 @@ class Preprocess:
                     data["Адрес объекта"].isin(unique_addr["addr"]), "Адрес объекта"
                 ]
             ]
+        data.loc[
+            data["Адрес объекта"] == "г Уфа, ул. Ахметова, д.322, Гаражи (ЧЖД) №987001",
+            "Адрес объекта 2",
+        ] = "г Уфа, ул. Ахметова, д.322"
+
         return data
 
     def preprocess_temperature_and_heating_data(
