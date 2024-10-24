@@ -23,9 +23,9 @@ FEATURES = [
 
 
 def generate_model_inputs(
-    df_seq: pd.DataDrame,
-    temperature: pd.DataDrame,
-    df_stat: pd.DataDrame,
+    df_seq: pd.DataFrame,
+    temperature: pd.DataFrame,
+    df_stat: pd.DataFrame,
     seq_length: Optional[int] = None,
     features: Optional[list] = None,
 ) -> list[Tuple[list, list, list]]:
