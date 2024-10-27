@@ -22,9 +22,9 @@ def generate_model_inputs(
     if seq_length is None:
         seq_length = SEQ_LENGTH
 
-    df = df_stat.copy()
+    df = df_stat.reset_index().copy()
 
-    df["seq"] = df.reset_index()["index"].apply(
+    df["seq"] = df["index"].apply(
         generate_sequence_list,
         df=df_seq,
         temperature=temperature,
