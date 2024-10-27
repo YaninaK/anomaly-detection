@@ -30,8 +30,18 @@ def generate_model_inputs(
         temperature=temperature,
         seq_length=seq_length,
     )
-    df["len_seq"] = df["seq"].apply(lambda x: len(x))
-    df["len_cumsum"] = df["len_seq"].cumsum()
+    df = (
+        df.merge(
+            df["seq"].apply(pd.Series).stack().reset_index(),
+            how="right",
+            left_on="index",
+            right_on="level_0",
+        )
+        .drop(["seq", "level_0"], axis=1)
+        .rename(
+            columns={"index": "object index", 0: "LSTM input", "level_1": "seq index"}
+        )
+    )
 
     return df
 
