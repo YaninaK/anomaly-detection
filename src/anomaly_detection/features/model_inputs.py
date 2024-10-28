@@ -42,6 +42,9 @@ class Generator:
         Создает tensorflow dataset для обучения модели по данным о потреблении теплоэнергии,
         статическим признакам, данным о температуре и количестве дней в отопительном периоде.
         """
+        df_stat["Общая площадь объекта"].fillna(1, inplace=True)
+        df_stat["Группа общая площадь объекта"].fillna(1, inplace=True)
+
         df = self.generate_model_inputs_df(df_seq, temperature, df_stat)
         dataset = self.get_tf_dataset(df)
 
@@ -53,27 +56,32 @@ class Generator:
         """
         ds = tf.data.Dataset.from_generator(
             lambda: self.generator(df),
-            output_signature={
-                "n_floors": tf.TensorSpec(shape=(1,), dtype=tf.int64, name="n_floors"),
-                "area": tf.TensorSpec(shape=(1,), dtype=tf.float64, name="area"),
-                "area_group": tf.TensorSpec(
-                    shape=(1,), dtype=tf.int64, name="area_group"
-                ),
-                "object_type": tf.TensorSpec(
-                    shape=(1,), dtype=tf.string, name="object_type"
-                ),
-                "floor_group": tf.TensorSpec(
-                    shape=(1,), dtype=tf.string, name="floor_group"
-                ),
-                "year_group": tf.TensorSpec(
-                    shape=(1,), dtype=tf.string, name="year_group"
-                ),
-                "street": tf.TensorSpec(shape=(1,), dtype=tf.string, name="street"),
-                "gvs": tf.TensorSpec(shape=(1,), dtype=tf.int64, name="gvs"),
-                "LSTM input": tf.TensorSpec(
-                    shape=(4, 3), dtype=tf.float64, name="LSTM input"
-                ),
-            },
+            output_signature=(
+                {
+                    "n_floors": tf.TensorSpec(
+                        shape=(1,), dtype=tf.int64, name="n_floors"
+                    ),
+                    "area": tf.TensorSpec(shape=(1,), dtype=tf.float64, name="area"),
+                    "area_group": tf.TensorSpec(
+                        shape=(1,), dtype=tf.int64, name="area_group"
+                    ),
+                    "object_type": tf.TensorSpec(
+                        shape=(1,), dtype=tf.string, name="object_type"
+                    ),
+                    "floor_group": tf.TensorSpec(
+                        shape=(1,), dtype=tf.string, name="floor_group"
+                    ),
+                    "year_group": tf.TensorSpec(
+                        shape=(1,), dtype=tf.string, name="year_group"
+                    ),
+                    "street": tf.TensorSpec(shape=(1,), dtype=tf.string, name="street"),
+                    "gvs": tf.TensorSpec(shape=(1,), dtype=tf.int64, name="gvs"),
+                    "LSTM input": tf.TensorSpec(
+                        shape=(4, 3), dtype=tf.float64, name="LSTM input"
+                    ),
+                },
+                tf.TensorSpec(shape=(4, 3), dtype=tf.float64, name="LSTM output"),
+            ),
         )
         return ds
 
@@ -96,8 +104,9 @@ class Generator:
                 "gvs": stat_inp[7].astype(int),
                 "LSTM input": np.array(df.loc[i, "LSTM input"]),
             }
+            label = np.array(df.loc[i, "LSTM input"])
 
-            yield inputs
+            yield inputs, label
 
     def generate_model_inputs_df(
         self,
@@ -157,7 +166,8 @@ class Generator:
                         for k in reversed(range(self.seq_length))
                     ]
                     ozp = [
-                        temperature["ОЗП"][ind - k] for k in reversed(range(self.seq_length))
+                        temperature["ОЗП"][ind - k]
+                        for k in reversed(range(self.seq_length))
                     ]
 
                     sequence_list.append(list(zip(seq, temp, ozp)))
