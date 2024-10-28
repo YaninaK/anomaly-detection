@@ -22,39 +22,60 @@ def get_autoencoder(
     if config is None:
         config = AUTOENCODER_CONFIG
 
-    preprocessing_layers = []
-    for feature in config["features"][:2]:
-        normalize_layer = tf.keras.layers.Normalization(axis=None)
-        normalize_layer.adapt(df_stat[feature].fillna(0).values)
-        preprocessing_layers.append(normalize_layer)
+    norm_n_floors = tf.keras.layers.Normalization(axis=None, name="n_floors_prep")
+    norm_n_floors.adapt(df_stat[config["features"][0]].fillna(0).values)
 
-    integerlookup_layer = tf.keras.layers.IntegerLookup(output_mode="one_hot")
-    integerlookup_layer.adapt(df_stat[config["features"][2]])
-    preprocessing_layers.append(integerlookup_layer)
+    norma_area = tf.keras.layers.Normalization(axis=None, name="area_prep")
+    norma_area.adapt(df_stat[config["features"][1]].fillna(0).values)
 
-    for feature in config["features"][3:-1]:
-        stringlookup_layer = tf.keras.layers.StringLookup(output_mode="one_hot")
-        stringlookup_layer.adapt(df_stat[feature])
-        preprocessing_layers.append(stringlookup_layer)
+    intlookup_area_group = tf.keras.layers.IntegerLookup(
+        output_mode="one_hot", name=f"area_group_prep"
+    )
+    intlookup_area_group.adapt(df_stat[config["features"][2]])
 
-    inputs = [
-        tf.keras.Input(shape=(1,), dtype=int, name=f"n_floors"),
-        tf.keras.Input(shape=(1,), dtype=float, name=f"area"),
-        tf.keras.Input(shape=(1,), dtype=int, name=f"area_group"),
-        tf.keras.Input(shape=(1,), dtype=str, name=f"object_type"),
-        tf.keras.Input(shape=(1,), dtype=str, name=f"floor_group"),
-        tf.keras.Input(shape=(1,), dtype=str, name=f"year_group"),
-        tf.keras.Input(shape=(1,), dtype=str, name=f"street"),
-        tf.keras.Input(shape=(1,), dtype=int, name=f"gvs"),
-        tf.keras.Input(
+    strlookup_object_type = tf.keras.layers.StringLookup(
+        output_mode="one_hot", name="object_type_prep"
+    )
+    strlookup_object_type.adapt(df_stat[config["features"][3]])
+
+    strlookup_floor_group = tf.keras.layers.StringLookup(
+        output_mode="one_hot", name="floor_group_prep"
+    )
+    strlookup_floor_group.adapt(df_stat[config["features"][4]])
+
+    strlookup_year_group = tf.keras.layers.StringLookup(
+        output_mode="one_hot", name="year_group_prep"
+    )
+    strlookup_year_group.adapt(df_stat[config["features"][5]])
+
+    strlookup_street = tf.keras.layers.StringLookup(
+        output_mode="one_hot", name="street_prep"
+    )
+    strlookup_street.adapt(df_stat[config["features"][6]])
+
+    inputs = {
+        "n_floors": tf.keras.Input(shape=(1,), dtype=int, name=f"n_floors"),
+        "area": tf.keras.Input(shape=(1,), dtype=float, name=f"area"),
+        "area_group": tf.keras.Input(shape=(1,), dtype=int, name=f"area_group"),
+        "object_type": tf.keras.Input(shape=(1,), dtype=str, name=f"object_type"),
+        "floor_group": tf.keras.Input(shape=(1,), dtype=str, name=f"floor_group"),
+        "year_group": tf.keras.Input(shape=(1,), dtype=str, name=f"year_group"),
+        "street": tf.keras.Input(shape=(1,), dtype=str, name=f"street"),
+        "gvs": tf.keras.Input(shape=(1,), dtype=int, name=f"gvs"),
+        "LSTM input": tf.keras.Input(
             shape=(config["input_sequence_length"], config["n_features"]),
             name="LSTM input",
         ),
-    ]
+    }
     layers = []
-    for i, layer in enumerate(preprocessing_layers):
-        layers.append(layer(inputs[i]))
-    layers.append(inputs[-2])
+    layers.append(norm_n_floors(inputs["n_floors"]))
+    layers.append(norma_area(inputs["area"]))
+    layers.append(intlookup_area_group(inputs["area_group"]))
+    layers.append(strlookup_object_type(inputs["object_type"]))
+    layers.append(strlookup_floor_group(inputs["floor_group"]))
+    layers.append(strlookup_year_group(inputs["year_group"]))
+    layers.append(strlookup_street(inputs["street"]))
+    layers.append(inputs["gvs"])
 
     stat_features = tf.keras.layers.Concatenate(axis=-1, name="stat_features")(layers)
     X_stat = tf.keras.layers.Dense(
@@ -69,7 +90,7 @@ def get_autoencoder(
         return_sequences=True,
         return_state=True,
         name="encoder_output1",
-    )(inputs[-1])
+    )(inputs["LSTM input"])
     encoder_states1 = [state_h1, state_c1]
 
     encoder_output2, state_h2, state_c2 = tf.keras.layers.LSTM(
