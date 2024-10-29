@@ -12,40 +12,62 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-from models import AUTOENCODER_CONFIG
-
 logger = logging.getLogger(__name__)
 
 __all__ = ["generate_model_inputs"]
 
 
-SEQ_LENGTH = 4
+MODEL_TYPE = "autoencoder"
+PATH = ""
+FOLDER = "data/03_primary/"
+FILE_NAME = "model_inputs_df.parquet.gzip"
 
 
 class Generator:
-    def __init__(self, seq_length: Optional[int] = None, config: Optional[dict] = None):
-        if seq_length is None:
-            seq_length = SEQ_LENGTH
-        if config is None:
-            config = AUTOENCODER_CONFIG
+    def __init__(
+        self,
+        model_type: Optional[str] = None,
+        config: Optional[dict] = None,
+    ):
+        if model_type is None:
+            model_type = MODEL_TYPE
 
-        self.seq_length = seq_length
+        if model_type == "autoencoder":
+            from models import AUTOENCODER_CONFIG as CONFIG
+        elif model_type == "ethalon_model":
+            from models import ETHALON_MODEL_CONFIG as CONFIG
+
+        if config is None:
+            config = CONFIG
+
         self.config = config
+        self.seq_length = config["seq_length"]
+        self.file_name = None
 
     def fit_transform(
         self,
         df_seq: pd.DataFrame,
         temperature: pd.DataFrame,
         df_stat: pd.DataFrame,
+        path: Optional[str] = None,
+        folder: Optional[str] = None,
+        file_name: str = None,
     ) -> tf.data.Dataset:
         """
         Создает tensorflow dataset для обучения модели по данным о потреблении теплоэнергии,
         статическим признакам, данным о температуре и количестве дней в отопительном периоде.
         """
+        if path is None:
+            path = PATH
+        if folder is None:
+            folder = f"{path}{FOLDER}"
+
+        file_name = f"{folder}{file_name}"
+
         df_stat["Общая площадь объекта"].fillna(1, inplace=True)
         df_stat["Группа общая площадь объекта"].fillna(1, inplace=True)
 
-        df = self.generate_model_inputs_df(df_seq, temperature, df_stat)
+        df = self.generate_model_inputs_df(df_seq, temperature, df_stat, file_name)
         dataset = self.get_tf_dataset(df)
 
         return dataset
@@ -77,10 +99,16 @@ class Generator:
                     "street": tf.TensorSpec(shape=(1,), dtype=tf.string, name="street"),
                     "gvs": tf.TensorSpec(shape=(1,), dtype=tf.int64, name="gvs"),
                     "LSTM input": tf.TensorSpec(
-                        shape=(4, 3), dtype=tf.float64, name="LSTM input"
+                        shape=(self.config["input_sequence_length"], 3),
+                        dtype=tf.float64,
+                        name="LSTM input",
                     ),
                 },
-                tf.TensorSpec(shape=(4, 3), dtype=tf.float64, name="LSTM output"),
+                tf.TensorSpec(
+                    shape=(self.config["output_sequence_length"], 3),
+                    dtype=tf.float64,
+                    name="LSTM output",
+                ),
             ),
         )
         return ds
@@ -102,9 +130,13 @@ class Generator:
                 "year_group": stat_inp[5],
                 "street": stat_inp[6],
                 "gvs": stat_inp[7].astype(int),
-                "LSTM input": np.array(df.loc[i, "LSTM input"]),
+                "LSTM input": np.array(df.loc[i, "LSTM input"])[
+                    : self.config["input_sequence_length"], :
+                ],
             }
-            label = np.array(df.loc[i, "LSTM input"])
+            label = np.array(df.loc[i, "LSTM input"])[
+                -self.config["output_sequence_length"] :, :
+            ]
 
             yield inputs, label
 
@@ -113,6 +145,7 @@ class Generator:
         df_seq: pd.DataFrame,
         temperature: pd.DataFrame,
         df_stat: pd.DataFrame,
+        file_name: str,
     ) -> pd.DataFrame:
 
         df = df_stat.reset_index().copy()
@@ -138,6 +171,7 @@ class Generator:
                 }
             )
         )
+        df.to_parquet(file_name, compression="gzip")
 
         return df
 
