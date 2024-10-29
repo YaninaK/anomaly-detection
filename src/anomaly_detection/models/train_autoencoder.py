@@ -112,11 +112,11 @@ def data_preprocessing_pipeline(
 
     test_periods = 4
     validation_period = 1
-    train = df_seq.iloc[:, : -test_periods - validation_period]
+    train = df_seq.iloc[:, : -test_periods - validation_period].copy()
     valid = df_seq.iloc[
         :, -test_periods - validation_period - config["seq_length"] + 1 : -test_periods
-    ]
-    test = df_seq.iloc[:, -test_periods - config["seq_length"] + 1 :]
+    ].copy()
+    test = df_seq.iloc[:, -test_periods - config["seq_length"] + 1 :].copy()
 
     logging.info("Normalizing temperarure...")
 
