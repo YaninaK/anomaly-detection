@@ -6,10 +6,11 @@ sys.path.append(os.path.join(os.getcwd(), "src", "anomaly_detection"))
 
 import logging
 import pickle
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
+import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
 
 from data.data_sequence import generate_data_sequence
@@ -41,7 +42,11 @@ def data_preprocessing_pipeline(
     temperature_scaler_file_name: Optional[str] = None,
     generator_train_df_file_name: Optional[str] = None,
     generator_valid_df_file_name: Optional[str] = None,
-):
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, tf.data.Dataset, tf.data.Dataset]:
+    """
+    Конвейер подготовки данных для автоэнкодера.
+    """
+
     if config is None:
         config = CONFIG
     if path is None:
@@ -142,4 +147,4 @@ def data_preprocessing_pipeline(
         valid, temperature, df_stat, path, file_name=generator_valid_df_file_name
     )
 
-    return ds_train, ds_valid
+    return df_seq, temperature, df_stat, ds_train, ds_valid
