@@ -72,7 +72,7 @@ class Generator:
         df = self.generate_model_inputs_df(df_seq, temperature, df_stat, file_name)
         dataset = self.get_tf_dataset(df)
 
-        return dataset
+        return dataset, df
 
     def get_tf_dataset(self, df: pd.DataFrame) -> tf.data.Dataset:
         """
