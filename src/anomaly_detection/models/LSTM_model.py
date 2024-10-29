@@ -1,13 +1,13 @@
 import logging
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 import tensorflow as tf
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["define_autoencoder"]
-
+__all__ = ["define_model"]
 
 MODEL_TYPE = "autoencoder"
 
@@ -45,9 +45,14 @@ def get_model(
     intlookup_area_group.adapt(df_stat[config["features"][2]])
 
     strlookup_object_type = tf.keras.layers.StringLookup(
-        output_mode="one_hot", name="object_type_prep"
+        output_mode="int", name="object_type_prep"
     )
     strlookup_object_type.adapt(df_stat[config["features"][3]])
+    n_vocab_1 = strlookup_object_type.vocabulary_size()
+    n_emb_1 = np.ceil(np.sqrt(n_vocab_1)).astype(int)
+    emb_object_type = tf.keras.layers.Embedding(
+        n_vocab_1, n_emb_1, name="object_type_emb"
+    )
 
     strlookup_floor_group = tf.keras.layers.StringLookup(
         output_mode="one_hot", name="floor_group_prep"
@@ -60,9 +65,12 @@ def get_model(
     strlookup_year_group.adapt(df_stat[config["features"][5]])
 
     strlookup_street = tf.keras.layers.StringLookup(
-        output_mode="one_hot", name="street_prep"
+        output_mode="int", name="street_prep"
     )
     strlookup_street.adapt(df_stat[config["features"][6]])
+    n_vocab_2 = strlookup_street.vocabulary_size()
+    n_emb_2 = np.ceil(np.sqrt(n_vocab_2)).astype(int)
+    emb_street = tf.keras.layers.Embedding(n_vocab_2, n_emb_2, name="street_emb")
 
     inputs = {
         "n_floors": tf.keras.Input(shape=(1,), dtype=int, name=f"n_floors"),
@@ -82,10 +90,28 @@ def get_model(
     layers.append(norm_n_floors(inputs["n_floors"]))
     layers.append(norma_area(inputs["area"]))
     layers.append(intlookup_area_group(inputs["area_group"]))
-    layers.append(strlookup_object_type(inputs["object_type"]))
+
+    object_type_strlookup = strlookup_object_type(inputs["object_type"])
+    object_type_emb = emb_object_type(object_type_strlookup)
+    object_type_dense = tf.keras.layers.Dense(
+        config["object_type_units"], name="object_type_dense"
+    )(object_type_emb)
+    object_type_flatten = tf.keras.layers.Flatten(name="object_type_flatten")(
+        object_type_dense
+    )
+    layers.append(object_type_flatten)
+
     layers.append(strlookup_floor_group(inputs["floor_group"]))
     layers.append(strlookup_year_group(inputs["year_group"]))
-    layers.append(strlookup_street(inputs["street"]))
+
+    street_strlookup = strlookup_street(inputs["street"])
+    street_emb = emb_street(street_strlookup)
+    street_dense = tf.keras.layers.Dense(config["street_units"], name="street_dense")(
+        street_emb
+    )
+    street_flatten = tf.keras.layers.Flatten(name="street_flatten")(street_dense)
+    layers.append(street_flatten)
+
     layers.append(inputs["gvs"])
 
     stat_features = tf.keras.layers.Concatenate(axis=-1, name="stat_features")(layers)
