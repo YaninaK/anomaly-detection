@@ -25,7 +25,7 @@ __all__ = ["preprocess_data"]
 
 
 PATH = ""
-FOLDER = "04_feature/"
+FOLDER = "data/04_feature/"
 TEMPERATURE_SCALER_FILE_NAME = "temperature_scaler.pkl"
 GENERATOR_TRAIN_DF_FILE_NAME = "train_df.parquet.gzip"
 GENERATOR_VALID_DF_FILE_NAME = "valid_df.parquet.gzip"
@@ -67,7 +67,7 @@ def data_preprocessing_pipeline(
     logging.info("Generating consumption data sequence...")
 
     df = generate_data_sequence(data)
-    n_periods = len(df)
+    n_periods = config["n_periods"]
     df.iloc[:, -n_periods:] = np.where(
         df.iloc[:, -n_periods:] == 0, np.nan, df.iloc[:, -n_periods:]
     )

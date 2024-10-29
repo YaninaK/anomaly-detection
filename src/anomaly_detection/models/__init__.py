@@ -9,6 +9,7 @@ AUTOENCODER_CONFIG = {
         "Улица",
         "Вид энерг-а ГВС",
     ],
+    "n_periods": 24,
     "seq_length": 4,
     "n_features": 3,
     "object_type_units": 2,
