@@ -61,6 +61,8 @@ class Generator:
             path = PATH
         if folder is None:
             folder = f"{path}{FOLDER}"
+        if file_name is None:
+            file_name = FILE_NAME
 
         file_name = f"{folder}{file_name}"
 
