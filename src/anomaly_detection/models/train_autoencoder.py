@@ -42,7 +42,15 @@ def data_preprocessing_pipeline(
     temperature_scaler_file_name: Optional[str] = None,
     generator_train_df_file_name: Optional[str] = None,
     generator_valid_df_file_name: Optional[str] = None,
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, tf.data.Dataset, tf.data.Dataset]:
+) -> Tuple[
+    tf.data.Dataset,
+    tf.data.Dataset,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    tf.data.Dataset,
+    tf.data.Dataset,
+]:
     """
     Конвейер подготовки данных для автоэнкодера.
     """
@@ -140,11 +148,11 @@ def data_preprocessing_pipeline(
     logging.info("Generating tensorflow datasets for autoencoder model training ...")
 
     generator = Generator()
-    ds_train = generator.fit_transform(
+    ds_train, train_df = generator.fit_transform(
         train, temperature, df_stat, path, file_name=generator_train_df_file_name
     )
-    ds_valid = generator.fit_transform(
+    ds_valid, valid_df = generator.fit_transform(
         valid, temperature, df_stat, path, file_name=generator_valid_df_file_name
     )
 
-    return df_seq, temperature, df_stat, ds_train, ds_valid
+    return ds_train, ds_valid, train_df, valid_df, df_seq, temperature, df_stat
