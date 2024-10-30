@@ -1,4 +1,5 @@
 AUTOENCODER_CONFIG = {
+    "model_type": "autoencoder",
     "features": [
         "Этажность объекта",
         "Общая площадь объекта",
@@ -23,6 +24,8 @@ AUTOENCODER_CONFIG = {
 }
 
 ETHALON_MODEL_CONFIG = {
+    "model_type": "ethalon_model",
+    "quantile": 0.7,
     "features": [
         "Этажность объекта",
         "Общая площадь объекта",
