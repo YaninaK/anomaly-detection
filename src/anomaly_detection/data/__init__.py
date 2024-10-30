@@ -13,3 +13,6 @@ OBJECT_TYPES = [
     "Медицинское учреждение",
     "Больницы",
 ]
+
+N_VALID_PERIODS = 1
+N_TEST_PERIODS = 4
