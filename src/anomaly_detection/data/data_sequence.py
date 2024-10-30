@@ -1,6 +1,17 @@
+import os
+import sys
+
+sys.path.append(os.getcwd())
+sys.path.append(os.path.join(os.getcwd(), "src", "anomaly_detection"))
+
 import logging
+from typing import Optional, Tuple
 
 import pandas as pd
+
+from models import AUTOENCODER_CONFIG as CONFIG
+
+from . import N_TEST_PERIODS, N_VALID_PERIODS
 
 logger = logging.getLogger(__name__)
 
@@ -47,3 +58,31 @@ def generate_data_sequence(data: pd.DataFrame) -> pd.DataFrame:
     df.set_index(merge_basis, inplace=True)
 
     return df
+
+
+def sequence_train_validation_split(
+    df_seq: pd.DataFrame,
+    n_valid_periods: Optional[int] = None,
+    n_test_periods: Optional[int] = None,
+    config: Optional[dict] = None,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """
+    Делит временной ряд на обучающую, валидационную и тестовую выборки
+    по числу периодов, оставленных для валидации и тестирования, и длине
+    последовательностей, на которые делится временной ряд.
+    """
+    if n_valid_periods is None:
+        n_valid_periods = N_VALID_PERIODS
+    if n_test_periods is None:
+        n_test_periods = N_TEST_PERIODS
+    if config is None:
+        config = CONFIG
+
+    train = df_seq.iloc[:, : -n_test_periods - n_valid_periods]
+    valid = df_seq.iloc[
+        :,
+        -n_test_periods - n_valid_periods - config["seq_length"] + 1 : -n_test_periods,
+    ]
+    test = df_seq.iloc[:, -n_test_periods - config["seq_length"] + 1 :]
+
+    return train, valid, test
