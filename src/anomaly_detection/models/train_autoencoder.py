@@ -75,6 +75,7 @@ def data_preprocessing_pipeline(
 
     df = generate_data_sequence(data)
     df_stat, df_seq = generate_static_and_sequence_datasets(df, temperature, buildings)
+    df_seq /= temperature["Число дней"]
 
     logging.info(
         "Splitting sequence dataset into train, validation and test datasets..."

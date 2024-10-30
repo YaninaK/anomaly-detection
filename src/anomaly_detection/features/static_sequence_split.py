@@ -29,7 +29,6 @@ def generate_static_and_sequence_datasets(
     3. Генерирует 2 датасета:
         df_stat - на датасет со статичными данными
         df_seq - датасет с временными рядами.
-    4. Расчитывает удельное потребление теплоенергии за день в разрезе объектов.
     """
     if config is None:
         config = CONFIG
@@ -65,6 +64,5 @@ def generate_static_and_sequence_datasets(
             "Общая площадь объекта",
         ]
     ]
-    df_seq = df_comb.iloc[:, -n_periods:] / temperature["Число дней"]
-
+    df_seq = df_comb.iloc[:, -n_periods:]
     return df_stat, df_seq
