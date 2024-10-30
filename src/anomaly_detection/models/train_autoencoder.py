@@ -10,6 +10,7 @@ from typing import Optional, Tuple
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+
 from data.data_sequence import generate_data_sequence, sequence_train_validation_split
 from data.preprocess import Preprocess
 from features.model_inputs import Generator
@@ -82,7 +83,7 @@ def data_preprocessing_pipeline(
 
     logging.info("Transforming temperature...")
 
-    temperature = transform_temperature(temperature)
+    temperature = transform_temperature(temperature, path=path)
 
     logging.info("Grouping static features...")
 

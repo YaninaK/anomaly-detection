@@ -20,7 +20,7 @@ __all__ = ["transform_temperature"]
 
 
 PATH = ""
-FOLDER = "/data/04_feature/"
+FOLDER = "data/04_feature/"
 FILE_NAME = "temperature_scaler.pkl"
 
 
