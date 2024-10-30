@@ -29,7 +29,14 @@ def ethalon_model_data_preprocessing_pipeline(
     train_df: pd.DataFrame,
     batch_size: Optional[int] = None,
     config: Optional[dict] = None,
-) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
+) -> Tuple[
+    tf.data.Dataset,
+    tf.data.Dataset,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+]:
     if batch_size is None:
         batch_size = BATCH_SIZE
     if config is None:
@@ -58,7 +65,14 @@ def ethalon_model_data_preprocessing_pipeline(
     ds_train_et = generator.get_tf_dataset(train_df_et)
     ds_valid_et = generator.get_tf_dataset(valid_df_et)
 
-    return ds_train_et, ds_valid_et
+    return (
+        ds_train_et,
+        ds_valid_et,
+        train_df_et,
+        valid_df_et,
+        train_df,
+        selected_inputs_df,
+    )
 
 
 def ethalon_model_train_validation_split(
