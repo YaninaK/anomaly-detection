@@ -5,18 +5,17 @@ sys.path.append(os.getcwd())
 sys.path.append(os.path.join(os.getcwd(), "src", "anomaly_detection"))
 
 import logging
-import pickle
 from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from sklearn.preprocessing import MinMaxScaler
-
-from data.data_sequence import generate_data_sequence
+from data.data_sequence import generate_data_sequence, sequence_train_validation_split
 from data.preprocess import Preprocess
 from features.model_inputs import Generator
 from features.objects_grouping import ObjectsGrouping
+from features.static_sequence_split import generate_static_and_sequence_datasets
+from features.temperature import transform_temperature
 
 from . import AUTOENCODER_CONFIG as CONFIG
 
@@ -27,9 +26,8 @@ __all__ = ["preprocess_data"]
 
 PATH = ""
 FOLDER = "data/04_feature/"
-TEMPERATURE_SCALER_FILE_NAME = "temperature_scaler.pkl"
-GENERATOR_TRAIN_DF_FILE_NAME = "train_df.parquet.gzip"
-GENERATOR_VALID_DF_FILE_NAME = "valid_df.parquet.gzip"
+TRAIN_DF_FILE_NAME = "train_df.parquet.gzip"
+VALID_DF_FILE_NAME = "valid_df.parquet.gzip"
 
 
 def data_preprocessing_pipeline(
@@ -39,17 +37,16 @@ def data_preprocessing_pipeline(
     config: Optional[dict] = None,
     path: Optional[str] = None,
     folder: Optional[str] = None,
-    temperature_scaler_file_name: Optional[str] = None,
-    generator_train_df_file_name: Optional[str] = None,
-    generator_valid_df_file_name: Optional[str] = None,
+    train_df_file_name: Optional[str] = None,
+    valid_df_file_name: Optional[str] = None,
 ) -> Tuple[
     tf.data.Dataset,
     tf.data.Dataset,
     pd.DataFrame,
     pd.DataFrame,
     pd.DataFrame,
-    tf.data.Dataset,
-    tf.data.Dataset,
+    pd.DataFrame,
+    pd.DataFrame,
 ]:
     """
     Конвейер подготовки данных для автоэнкодера.
@@ -61,14 +58,10 @@ def data_preprocessing_pipeline(
         path = PATH
     if folder is None:
         folder = FOLDER
-    if temperature_scaler_file_name is None:
-        temperature_scaler_file_name = TEMPERATURE_SCALER_FILE_NAME
-    if generator_train_df_file_name is None:
-        generator_train_df_file_name = GENERATOR_TRAIN_DF_FILE_NAME
-    if generator_valid_df_file_name is None:
-        generator_valid_df_file_name = GENERATOR_VALID_DF_FILE_NAME
-
-    temperature_scaler_file_name = f"{path}{folder}{temperature_scaler_file_name}"
+    if train_df_file_name is None:
+        train_df_file_name = TRAIN_DF_FILE_NAME
+    if valid_df_file_name is None:
+        valid_df_file_name = VALID_DF_FILE_NAME
 
     logging.info("Prefiltering data...")
 
@@ -77,68 +70,19 @@ def data_preprocessing_pipeline(
         data, buildings, temperature
     )
 
-    logging.info("Generating consumption data sequence...")
+    logging.info("Generating static dataset and consumption time series...")
 
     df = generate_data_sequence(data)
-    n_periods = config["n_periods"]
-    df.iloc[:, -n_periods:] = np.where(
-        df.iloc[:, -n_periods:] == 0, np.nan, df.iloc[:, -n_periods:]
-    )
-    df /= temperature["Число дней"]
-
-    logging.info("Merging consumption data sequence with objects dataset...")
-
-    df_comb = buildings.merge(
-        df.reset_index(),
-        left_on=["Тип Объекта", "Адрес объекта 2"],
-        right_on=["Тип объекта", "Адрес объекта 2"],
-        how="right",
-    ).drop_duplicates(
-        subset=["Адрес объекта_y", "Тип объекта", "№ ОДПУ", "Вид энерг-а ГВС"],
-        keep=False,
-    )
-    df_comb = df_comb[df_comb["Адрес объекта_x"].notnull()].reset_index(drop=True)
-
-    logging.info("Splitting combined dataset into static and sequence dataset...")
-
-    df_stat = df_comb[
-        [
-            "Адрес объекта 2",
-            "Тип объекта",
-            "№ ОДПУ",
-            "Вид энерг-а ГВС",
-            "Этажность объекта",
-            "Дата постройки",
-            "Общая площадь объекта",
-        ]
-    ]
-    df_seq = df_comb.iloc[:, -n_periods:] / temperature["Число дней"]
+    df_stat, df_seq = generate_static_and_sequence_datasets(df, temperature, buildings)
 
     logging.info(
         "Splitting sequence dataset into train, validation and test datasets..."
     )
+    train, valid, test = sequence_train_validation_split(df_seq)
 
-    test_periods = 4
-    validation_period = 1
-    train = df_seq.iloc[:, : -test_periods - validation_period]
-    valid = df_seq.iloc[
-        :, -test_periods - validation_period - config["seq_length"] + 1 : -test_periods
-    ]
-    test = df_seq.iloc[:, -test_periods - config["seq_length"] + 1 :]
+    logging.info("Transforming temperature...")
 
-    logging.info("Normalizing temperarure...")
-
-    temperature["t_scaled"] = np.nan
-    t_ = temperature["Тн.в, град.С"].values.reshape(-1, 1)
-    temperature_scaler = MinMaxScaler()
-    temperature.iloc[:-test_periods, -1] = temperature_scaler.fit_transform(
-        t_[:-test_periods]
-    )
-    temperature.iloc[-test_periods:, -1] = temperature_scaler.transform(
-        t_[-test_periods:]
-    )
-    with open(temperature_scaler_file_name, "wb") as f:
-        pickle.dump(temperature_scaler, f)
+    temperature = transform_temperature(temperature)
 
     logging.info("Grouping static features...")
 
@@ -147,12 +91,12 @@ def data_preprocessing_pipeline(
 
     logging.info("Generating tensorflow datasets for autoencoder model training ...")
 
-    generator = Generator()
+    generator = Generator(model_type=config["model_type"])
     ds_train, train_df = generator.fit_transform(
-        train, temperature, df_stat, path, file_name=generator_train_df_file_name
+        train, temperature, df_stat, path, file_name=train_df_file_name
     )
     ds_valid, valid_df = generator.fit_transform(
-        valid, temperature, df_stat, path, file_name=generator_valid_df_file_name
+        valid, temperature, df_stat, path, file_name=valid_df_file_name
     )
 
     return ds_train, ds_valid, train_df, valid_df, df_seq, temperature, df_stat
