@@ -9,9 +9,9 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-
 from data.data_sequence import generate_data_sequence
 from data.preprocess import Preprocess
+from tqdm import tqdm
 
 from .category_encoding import encode_stat_features
 from .objects_grouping import ObjectsGrouping
@@ -86,7 +86,7 @@ def anomaly_detection_pipeline(
     seq_features = (df_seq.T.values / df_stat["Общая площадь объекта"].values).T
 
     period_results = {}
-    for period in range(n_periods):
+    for period in tqdm(range(n_periods)):
 
         logging.info("Calculating Hotelling's T-squared" "& Q residuals...")
 
