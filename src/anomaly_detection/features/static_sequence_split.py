@@ -64,4 +64,5 @@ def generate_static_and_sequence_datasets(
         ]
     ]
     df_seq = df_comb.iloc[:, -n_periods:]
+
     return df_stat, df_seq
