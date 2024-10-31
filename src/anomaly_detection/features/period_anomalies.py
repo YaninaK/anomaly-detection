@@ -25,16 +25,27 @@ __all__ = ["apartment_buildings_period_anomaly_detection_pipeline"]
 
 THRESHOLD = 0.25
 
+PATH = ""
+FOLDER = "data/06_model_output/"
+
 
 def anomaly_detection_pipeline(
     data: pd.DataFrame,
     temperature: pd.DataFrame,
     buildings: pd.DataFrame,
     threshold: Optional[float] = None,
+    path: Optional[str] = None,
+    folder: Optional[str] = None,
 ) -> pd.DataFrame:
 
     if threshold is None:
         threshold = THRESHOLD
+    if path is None:
+        path = PATH
+    if folder is None:
+        folder = FOLDER
+
+    files_folder = f"{path}{folder}"
 
     logging.info("Prefiltering data...")
 
@@ -87,6 +98,11 @@ def anomaly_detection_pipeline(
             df_seq, df_stat, df, X, period, threshold
         )
         period_results[period] = result
+
+        logging.info("Saving results...")
+
+        t = result.columns[9]
+        result.to_excel(f"{files_folder}{t.strftime('%Y-%m')}.xlsx")
 
     return period_results
 
