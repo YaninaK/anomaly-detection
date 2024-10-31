@@ -19,7 +19,6 @@ __all__ = ["generate_static_and_sequence_datasets"]
 
 def generate_static_and_sequence_datasets(
     df: pd.DataFrame,
-    temperature: pd.DataFrame,
     buildings: pd.DataFrame,
     config: Optional[dict] = None,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
