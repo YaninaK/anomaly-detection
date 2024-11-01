@@ -19,7 +19,7 @@ __all__ = ["equal_values_identification"]
 SAVE = False
 PATH = ""
 FOLDER = "results/2_equal_records/"
-FILE_NAME = "equal_values.xlsx"
+FILE_NAMES = ["completely_duplicated.xlsx", "equal_values.xlsx"]
 
 
 def equal_values_identification_pipeline(
@@ -29,7 +29,7 @@ def equal_values_identification_pipeline(
     save: Optional[bool] = None,
     path: Optional[str] = None,
     folder: Optional[str] = None,
-    file_name: Optional[str] = None,
+    file_names: Optional[list[str]] = None,
 ) -> pd.DataFrame:
     """
     Выявляет равные значения показаний в течение нескольких расчетных периодов
@@ -47,10 +47,15 @@ def equal_values_identification_pipeline(
         path = PATH
     if folder is None:
         folder = FOLDER
-    if file_name is None:
-        file_name = FILE_NAME
+    if file_names is None:
+        file_names = FILE_NAMES
 
-    file_name = f"{path}{folder}{file_name}"
+    file_name = [f"{path}{folder}{name}" for name in file_names]
+
+    completely_duplicated = data[
+        (data.iloc[:, 1:].duplicated(keep=False))
+        & data["Текущее потребление, Гкал"].notnull()
+    ]
 
     logging.info("Prefiltering data...")
 
@@ -86,6 +91,7 @@ def equal_values_identification_pipeline(
     if save:
         logging.info("Saving dataframes with equal values...")
 
-        equal_values.to_excel(file_name, index=False)
+        completely_duplicated.to_excel(file_names[0], index=False)
+        equal_values.to_excel(file_names[1], index=False)
 
-    return equal_values
+    return completely_duplicated, equal_values
