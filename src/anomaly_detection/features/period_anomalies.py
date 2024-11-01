@@ -251,7 +251,11 @@ def apartment_buildings_period_anomaly_detection_df(
         .transform(lambda x: x.median())
     )
     result[f"ниже медианы"] = medians > result[feature]
-    result[f"{threshold}% ниже медианы"] = medians > result[feature] / (1 - threshold)
-    result[f"{threshold}% выше медианы"] = medians < result[feature] / (1 + threshold)
+    result[f"{int(threshold * 100)}% ниже медианы"] = medians > result[feature] / (
+        1 - threshold
+    )
+    result[f"{int(threshold * 100)}% выше медианы"] = medians < result[feature] / (
+        1 + threshold
+    )
 
     return result
