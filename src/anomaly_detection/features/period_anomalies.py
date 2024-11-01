@@ -145,7 +145,7 @@ def anomaly_detection_pipeline(
         index="index", columns="Период потребления", values="Текущее потребление, Гкал"
     )
     all_periods_anomalies_pivot = pd.concat(
-        [df_stat, anomalies_seq], axis=1, join="inner"
+        [df_stat.iloc[:, :-2], anomalies_seq], axis=1, join="inner"
     )
     all_periods_anomalies_pivot.to_excel(result_file_names[1])
 
