@@ -50,7 +50,7 @@ def equal_values_identification_pipeline(
     if file_names is None:
         file_names = FILE_NAMES
 
-    file_name = [f"{path}{folder}{name}" for name in file_names]
+    file_names = [f"{path}{folder}{name}" for name in file_names]
 
     completely_duplicated = data[
         (data.iloc[:, 1:].duplicated(keep=False))
