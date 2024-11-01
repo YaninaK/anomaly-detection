@@ -144,8 +144,10 @@ def anomaly_detection_pipeline(
     anomalies_seq = all_periods_anomalies.reset_index().pivot_table(
         index="index", columns="Период потребления", values="Текущее потребление, Гкал"
     )
+    drop_cols = ["Улица", "Дата постройки 2", "Группа общая площадь объекта"]
+    cols = [i for i in df_stat.columns if i not in drop_cols]
     all_periods_anomalies_pivot = pd.concat(
-        [df_stat.iloc[:, :-2], anomalies_seq], axis=1, join="inner"
+        [df_stat[cols], anomalies_seq], axis=1, join="inner"
     )
     all_periods_anomalies_pivot.to_excel(result_file_names[1])
 
