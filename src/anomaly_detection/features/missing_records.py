@@ -4,7 +4,6 @@ import sys
 sys.path.append(os.getcwd())
 sys.path.append(os.path.join(os.getcwd(), "src", "anomaly_detection"))
 
-
 import logging
 import pickle
 from typing import Optional, Tuple
@@ -16,7 +15,7 @@ from data.preprocess import Preprocess
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["find_missing_records"]
+__all__ = ["missing_data_and_nonunique_objects_detection"]
 
 
 ALL_PERIODS = False
@@ -31,7 +30,7 @@ FILE_NAMES = [
 ]
 
 
-def identify_missing_data_and_nonunique_objects(
+def missing_data_and_nonunique_objects_detection_pipeline(
     data: pd.DataFrame,
     buildings: pd.DataFrame,
     temperature: pd.DataFrame,
@@ -68,21 +67,28 @@ def identify_missing_data_and_nonunique_objects(
 
     logging.info("Identifying missing records...")
 
-    missing_consumption_records = identify_missing_records(
-        df, all_periods, save, file_name=file_names[0]
-    )
+    missing_consumption_records = identify_missing_records(df, all_periods)
 
     logging.info("Identifying uninvoiced objects...")
 
-    uninvoiced_objects = identify_uninvoiced_objects(
-        df, buildings, save, file_name=file_names[1]
-    )
+    uninvoiced_objects = identify_uninvoiced_objects(df, buildings)
 
     logging.info("Identifying nonunique objects...")
 
-    nonunique_objects = identify_nonunique_objects(
-        buildings, save, file_name=file_names[2]
-    )
+    nonunique_objects = identify_nonunique_objects(buildings)
+
+    if save:
+        logging.info("Saving artifacts...")
+
+        missing_records_result = missing_consumption_records.reset_index().drop(
+            "Адрес объекта 2", axis=1
+        )
+        missing_records_result["Вид энерг-а ГВС"] = np.where(
+            missing_records_result["Вид энерг-а ГВС"] == 1, "ГВС-ИТП", None
+        )
+        missing_records_result.to_excel(file_names[0], index=False)
+        uninvoiced_objects.iloc[:, :-1].to_excel(file_names[1], index=False)
+        nonunique_objects.iloc[:, :-1].to_excel(file_names[2], index=False)
 
     return missing_consumption_records, uninvoiced_objects, nonunique_objects
 
@@ -90,8 +96,6 @@ def identify_missing_data_and_nonunique_objects(
 def identify_missing_records(
     df: pd.DataFrame,
     all_periods: bool,
-    save: bool,
-    file_name: str,
 ) -> pd.DataFrame:
 
     if not all_periods:
@@ -101,20 +105,11 @@ def identify_missing_records(
     cond = (df.isnull() | (df == 0)).sum(axis=1) > 0
     missing_records = df[cond]
 
-    if save:
-        missing_records_result = missing_records.reset_index().drop(
-            "Адрес объекта 2", axis=1
-        )
-        missing_records_result["Вид энерг-а ГВС"] = np.where(
-            missing_records_result["Вид энерг-а ГВС"] == 1, "ГВС-ИТП", None
-        )
-        missing_records_result.to_excel(file_name, index=False)
-
     return missing_records
 
 
 def identify_uninvoiced_objects(
-    df: pd.DataFrame, buildings: pd.DataFrame, save: bool, file_name: str
+    df: pd.DataFrame, buildings: pd.DataFrame
 ) -> pd.DataFrame:
     """
     Выявляет объекты, по которым нет данных учета теплоэнергии.
@@ -132,16 +127,11 @@ def identify_uninvoiced_objects(
         buildings, how="left", on=merge_basis
     )[buildings.columns]
 
-    if save:
-        uninvoiced_objects.iloc[:, :-1].to_excel(file_name, index=False)
-
     return uninvoiced_objects
 
 
 def identify_nonunique_objects(
     buildings: pd.DataFrame,
-    save: bool,
-    file_name: str,
 ) -> pd.DataFrame:
     """
     Выбирает неуникальные адреса объектов в разрезе типов объектов.
@@ -150,7 +140,5 @@ def identify_nonunique_objects(
     nonunique = buildings[
         buildings.duplicated(subset=["Адрес объекта", "Тип Объекта"], keep=False)
     ]
-    if save:
-        nonunique.iloc[:, :-1].to_excel(file_name, index=False)
 
     return nonunique
