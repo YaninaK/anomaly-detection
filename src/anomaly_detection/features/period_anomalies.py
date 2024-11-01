@@ -78,7 +78,7 @@ def anomaly_detection_pipeline(
         data, buildings, temperature
     )
 
-    logging.info("Generating static dataset and consumption time series...")
+    logging.info("Generating data sequence...")
 
     df = generate_data_sequence(data)
     df.fillna(0, inplace=True)
