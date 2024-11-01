@@ -1,12 +1,6 @@
-import os
-import sys
-
-sys.path.append(os.getcwd())
-sys.path.append(os.path.join(os.getcwd(), "src", "anomaly_detection"))
-
 import logging
 import pickle
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -19,10 +13,11 @@ __all__ = ["find_missing_records"]
 ALL_PERIODS = False
 SAVE = False
 PATH = ""
+FOLDER = "results/1_missing_records/"
 FILE_NAMES = [
-    "results/missing_records.xlsx",
-    "results/uninvoiced_objects.xlsx",
-    "results/nonunique_objects.xlsx",
+    "missing_records.xlsx",
+    "uninvoiced_objects.xlsx",
+    "nonunique_objects.xlsx",
 ]
 
 
@@ -31,6 +26,7 @@ def select_missing_records(
     all_periods: Optional[bool] = None,
     save: Optional[bool] = None,
     path: Optional[str] = None,
+    folder: Optional[str] = None,
     file_name: Optional[str] = None,
 ) -> pd.DataFrame:
 
@@ -40,8 +36,10 @@ def select_missing_records(
         save = SAVE
     if path is None:
         path = PATH
+    if folder is None:
+        folder = FOLDER
     if file_name is None:
-        file_name = f"{path}{FILE_NAMES[0]}"
+        file_name = f"{path}{folder}{FILE_NAMES[0]}"
 
     if not all_periods:
         periods = [x for x in df.columns if x.month not in range(5, 10)]
@@ -67,6 +65,7 @@ def select_uninvoiced_objects(
     buildings: pd.DataFrame,
     save: Optional[bool] = None,
     path: Optional[str] = None,
+    folder: Optional[str] = None,
     file_name: Optional[str] = None,
 ) -> pd.DataFrame:
     """
@@ -76,8 +75,12 @@ def select_uninvoiced_objects(
         save = SAVE
     if path is None:
         path = PATH
+    if folder is None:
+        folder = FOLDER
     if file_name is None:
-        file_name = f"{path}{FILE_NAMES[1]}"
+        file_name = FILE_NAMES[1]
+
+    file_name = f"{path}{folder}{file_name}"
 
     df1 = df.reset_index()
     uninvoiced_objects = sorted(
@@ -101,6 +104,7 @@ def select_nonunique_objects(
     buildings: pd.DataFrame,
     save: Optional[bool] = None,
     path: Optional[str] = None,
+    folder: Optional[str] = None,
     file_name: Optional[str] = None,
 ) -> pd.DataFrame:
     """
@@ -110,8 +114,12 @@ def select_nonunique_objects(
         save = SAVE
     if path is None:
         path = PATH
+    if folder is None:
+        folder = FOLDER
     if file_name is None:
-        file_name = f"{path}{FILE_NAMES[2]}"
+        file_name = FILE_NAMES[2]
+
+    file_name = f"{path}{folder}{file_name}"
 
     nonunique = buildings[
         buildings.duplicated(subset=["Адрес объекта", "Тип Объекта"], keep=False)
