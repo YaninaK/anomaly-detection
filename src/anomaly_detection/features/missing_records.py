@@ -1,9 +1,18 @@
+import os
+import sys
+
+sys.path.append(os.getcwd())
+sys.path.append(os.path.join(os.getcwd(), "src", "anomaly_detection"))
+
+
 import logging
 import pickle
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
+from data.data_sequence import generate_data_sequence
+from data.preprocess import Preprocess
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +20,8 @@ __all__ = ["find_missing_records"]
 
 
 ALL_PERIODS = False
-SAVE = False
+SAVE = True
+
 PATH = ""
 FOLDER = "results/1_missing_records/"
 FILE_NAMES = [
@@ -21,14 +31,16 @@ FILE_NAMES = [
 ]
 
 
-def select_missing_records(
-    df: pd.DataFrame,
+def identify_missing_data_and_nonunique_objects(
+    data: pd.DataFrame,
+    buildings: pd.DataFrame,
+    temperature: pd.DataFrame,
     all_periods: Optional[bool] = None,
     save: Optional[bool] = None,
     path: Optional[str] = None,
     folder: Optional[str] = None,
-    file_name: Optional[str] = None,
-) -> pd.DataFrame:
+    file_names: Optional[list[str]] = None,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
     if all_periods is None:
         all_periods = ALL_PERIODS
@@ -38,8 +50,49 @@ def select_missing_records(
         path = PATH
     if folder is None:
         folder = FOLDER
-    if file_name is None:
-        file_name = f"{path}{folder}{FILE_NAMES[0]}"
+    if file_names is None:
+        file_names = FILE_NAMES
+
+    file_names = [f"{path}{folder}{name}" for name in file_names]
+
+    logging.info("Prefiltering data...")
+
+    preprocess = Preprocess()
+    data, buildings, temperature = preprocess.fit_transform(
+        data, buildings, temperature
+    )
+
+    logging.info("Generating data sequence...")
+
+    df = generate_data_sequence(data)
+
+    logging.info("Identifying missing records...")
+
+    missing_consumption_records = identify_missing_records(
+        df, all_periods, save, file_name=file_names[0]
+    )
+
+    logging.info("Identifying uninvoiced objects...")
+
+    uninvoiced_objects = identify_uninvoiced_objects(
+        df, buildings, save, file_name=file_names[1]
+    )
+
+    logging.info("Identifying nonunique objects...")
+
+    nonunique_objects = identify_nonunique_objects(
+        buildings, save, file_name=file_names[2]
+    )
+
+    return missing_consumption_records, uninvoiced_objects, nonunique_objects
+
+
+def identify_missing_records(
+    df: pd.DataFrame,
+    all_periods: bool,
+    save: bool,
+    file_name: str,
+) -> pd.DataFrame:
 
     if not all_periods:
         periods = [x for x in df.columns if x.month not in range(5, 10)]
@@ -60,27 +113,12 @@ def select_missing_records(
     return missing_records
 
 
-def select_uninvoiced_objects(
-    df: pd.DataFrame,
-    buildings: pd.DataFrame,
-    save: Optional[bool] = None,
-    path: Optional[str] = None,
-    folder: Optional[str] = None,
-    file_name: Optional[str] = None,
+def identify_uninvoiced_objects(
+    df: pd.DataFrame, buildings: pd.DataFrame, save: bool, file_name: str
 ) -> pd.DataFrame:
     """
     Выявляет объекты, по которым нет данных учета теплоэнергии.
     """
-    if save is None:
-        save = SAVE
-    if path is None:
-        path = PATH
-    if folder is None:
-        folder = FOLDER
-    if file_name is None:
-        file_name = FILE_NAMES[1]
-
-    file_name = f"{path}{folder}{file_name}"
 
     df1 = df.reset_index()
     uninvoiced_objects = sorted(
@@ -100,26 +138,14 @@ def select_uninvoiced_objects(
     return uninvoiced_objects
 
 
-def select_nonunique_objects(
+def identify_nonunique_objects(
     buildings: pd.DataFrame,
-    save: Optional[bool] = None,
-    path: Optional[str] = None,
-    folder: Optional[str] = None,
-    file_name: Optional[str] = None,
+    save: bool,
+    file_name: str,
 ) -> pd.DataFrame:
     """
     Выбирает неуникальные адреса объектов в разрезе типов объектов.
     """
-    if save is None:
-        save = SAVE
-    if path is None:
-        path = PATH
-    if folder is None:
-        folder = FOLDER
-    if file_name is None:
-        file_name = FILE_NAMES[2]
-
-    file_name = f"{path}{folder}{file_name}"
 
     nonunique = buildings[
         buildings.duplicated(subset=["Адрес объекта", "Тип Объекта"], keep=False)
