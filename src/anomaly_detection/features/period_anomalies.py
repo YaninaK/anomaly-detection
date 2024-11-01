@@ -193,8 +193,8 @@ def select_anomalies(
     cond2 = df["Q residuals"] > q2
     cond3 = df["ниже медианы"] == True
 
-    cond4 = df[f"{threshold}% ниже медианы"] == True
-    cond5 = df[f"{threshold}% выше медианы"] == True
+    cond4 = df[f"{int(threshold * 100)}% ниже медианы"] == True
+    cond5 = df[f"{int(threshold * 100)}% выше медианы"] == True
 
     return cond1, cond2, cond3, cond4, cond5
 
