@@ -38,6 +38,8 @@ def main():
         help="consumption, objects and temperature datasets store folder path",
     )
 
+    args = argparser.parse_args()
+
     if args.verbose:
         logging.basicConfig(level=logging.INFO)
 
