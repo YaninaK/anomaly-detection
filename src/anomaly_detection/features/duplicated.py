@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 __all__ = ["equal_values_identification"]
 
 
-SAVE = False
+SAVE = True
 PATH = ""
 FOLDER = "results/2_equal_records/"
 FILE_NAMES = ["completely_duplicated.xlsx", "equal_values.xlsx"]
