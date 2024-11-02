@@ -6,7 +6,7 @@ sys.path.append(os.path.join(os.getcwd(), "..", "src", "anomaly_detection"))
 
 
 import logging
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -52,7 +52,7 @@ class Generator:
         path: Optional[str] = None,
         folder: Optional[str] = None,
         file_name: str = None,
-    ) -> tf.data.Dataset:
+    ) -> Tuple[tf.data.Dataset, pd.DataFrame]:
         """
         Создает tensorflow dataset для обучения модели по данным о потреблении теплоэнергии,
         статическим признакам, данным о температуре и количестве дней в отопительном периоде.
