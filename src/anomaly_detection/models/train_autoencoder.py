@@ -74,7 +74,9 @@ def data_preprocessing_pipeline(
     logging.info("Generating static dataset and consumption time series...")
 
     df = generate_data_sequence(data)
-    df_stat, df_seq = generate_static_and_sequence_datasets(df, temperature, buildings)
+    df_stat, df_seq = generate_static_and_sequence_datasets(
+        df, buildings, config=config
+    )
     df_seq /= temperature["Число дней"]
 
     logging.info(
