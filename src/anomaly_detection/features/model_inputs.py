@@ -152,27 +152,38 @@ class Generator:
 
         df = df_stat.reset_index().copy()
 
-        df["seq"] = df["index"].apply(
+        comb = df["index"].apply(
             self.generate_sequence_list,
             df=df_seq,
             temperature=temperature,
         )
+        df["seq"] = comb.apply(lambda x: x[0])
+        df["last_seq_month"] = comb.apply(lambda x: x[1])
+
         df = (
             df.merge(
-                df["seq"].apply(pd.Series).stack().reset_index(),
+                pd.concat(
+                    [
+                        df["seq"].apply(pd.Series).stack(),
+                        df["last_seq_month"].apply(pd.Series).stack(),
+                    ],
+                    axis=1,
+                ).reset_index(),
                 how="right",
                 left_on="index",
                 right_on="level_0",
             )
-            .drop(["seq", "level_0"], axis=1)
+            .drop(["seq", "last_seq_month", "level_0"], axis=1)
             .rename(
                 columns={
                     "index": "object index",
-                    0: "LSTM input",
                     "level_1": "seq index",
+                    0: "LSTM input",
+                    1: "last seq month",
                 }
             )
         )
+        df["last seq month"] = pd.to_datetime(df["last seq month"])
         df.to_parquet(file_name, compression="gzip")
 
         return df
@@ -182,7 +193,7 @@ class Generator:
         n: int,
         df: pd.DataFrame,
         temperature: pd.DataFrame,
-    ) -> list:
+    ) -> Tuple[list, list]:
         """
         1. Совмещает данные о потреблении теплоэнергии с данными о температуре.
         2. Возвращает список последовательностей размерностью seq_length для объекта n.
@@ -190,6 +201,7 @@ class Generator:
         x = df.iloc[n, :]
         sequence_list = []
         s = 0
+        last_period_ind_list = []
         for ind, num in enumerate(x):
             if np.isnan(num):
                 s = 0
@@ -205,8 +217,8 @@ class Generator:
                         temperature["ОЗП"][ind - k]
                         for k in reversed(range(self.seq_length))
                     ]
-
                     sequence_list.append(list(zip(seq, temp, ozp)))
+                    last_period_ind_list.append(ind)
                     s = self.seq_length - 1
 
-        return sequence_list
+        return sequence_list, df.columns[last_period_ind_list].tolist()
