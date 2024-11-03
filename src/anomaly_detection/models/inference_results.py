@@ -72,8 +72,8 @@ def post_process_inference_results(
         columns={"last seq month": "Период потребления"}, inplace=True
     )
 
-    q = np.percentile(model_inputs_df["Индекс соответствия прогнозу"], percentile)
-    result = model_inputs_df[model_inputs_df["Индекс соответствия прогнозу"] > q]
+    q = np.percentile(abs(model_inputs_df["Отклонение от прогноза"]), percentile)
+    result = model_inputs_df[abs(model_inputs_df["Отклонение от прогноза"]) > q]
 
     model_inputs_df[cols].to_excel(
         file_names[0],
