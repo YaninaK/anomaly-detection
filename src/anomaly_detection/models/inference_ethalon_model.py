@@ -44,8 +44,6 @@ def inference_data_preparation_pipeline(
 
     logging.info("Generating static dataset and consumption time series...")
 
-    config = CONFIG
-
     df = generate_data_sequence(data)
     df_stat, df_seq = generate_static_and_sequence_datasets(
         df, buildings, config=config
