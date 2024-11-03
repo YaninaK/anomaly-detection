@@ -48,14 +48,14 @@ def main():
         "-o1",
         "--output_autoencoder",
         required=False,
-        default=["autoencoder_v1.keras", "autoencoder_training_history_v1.joblib"],
-        help="filenames to store autoencoder and autoencoder training history",
+        default=["autoencoder_v1", "autoencoder_training_history_v1"],
+        help="filenames of autoencoder and autoencoder training history",
     )
     argparser.add_argument(
         "-o2",
         "--output_ethalon_model",
         required=False,
-        default=["ethalon_model_v1.keras", "ethalon_model_training_history_v1.joblib"],
+        default=["ethalon_model_v1", "ethalon_model_training_history_v1"],
         help="filenames to store ethalon model and ethalon model training history",
     )
     argparser.add_argument(
