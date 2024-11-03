@@ -48,21 +48,24 @@ def load_data(
     if file_name is None:
         file_name = f"{path}{FILE_NAME}"
 
-    data_files = [
-        f
-        for f in os.listdir(folder_path)
-        if f[0] != "." and (f.split()[1] in ["2021", "2022", "2023"])
-    ]
-    data = pd.DataFrame()
+    if save:
+        data_files = [
+            f
+            for f in os.listdir(folder_path)
+            if f[0] != "." and (f.split()[1] in ["2021", "2022", "2023"])
+        ]
+        data = pd.DataFrame()
 
-    for name in tqdm(data_files):
-        month, year, _ = name.split()
-        df = pd.read_excel(f"{folder_path}{name}", skiprows=1)
-        df["Период потребления"] = pd.to_datetime(f"{year}-{month_dict[month]}")
-        data = pd.concat([data, df], axis=0)
+        for name in tqdm(data_files):
+            month, year, _ = name.split()
+            df = pd.read_excel(f"{folder_path}{name}", skiprows=1)
+            df["Период потребления"] = pd.to_datetime(f"{year}-{month_dict[month]}")
+            data = pd.concat([data, df], axis=0)
 
-    data = data[data["Вид энерг-а ГВС"] != "ГВС (централ)"].reset_index()
-    data.to_parquet(file_name, compression="gzip")
+        data = data[data["Вид энерг-а ГВС"] != "ГВС (централ)"].reset_index()
+        data.to_parquet(file_name, compression="gzip")
+    else:
+        data = pd.read_parquet(file_name)
 
     temperature = (
         pd.read_excel(
