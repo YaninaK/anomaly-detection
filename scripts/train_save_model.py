@@ -18,10 +18,10 @@ import tensorflow as tf
 from src.anomaly_detection.data.make_dataset import load_data
 from src.anomaly_detection.models.LSTM_model import get_model
 from src.anomaly_detection.models.serialize import store
-from src.anomaly_detection.models.train_autoencoder import \
-    data_preprocessing_pipeline
-from src.anomaly_detection.models.train_ethalon_model import \
-    ethalon_model_data_preprocessing_pipeline
+from src.anomaly_detection.models.train_autoencoder import data_preprocessing_pipeline
+from src.anomaly_detection.models.train_ethalon_model import (
+    ethalon_model_data_preprocessing_pipeline,
+)
 
 logger = logging.getLogger()
 
@@ -75,7 +75,7 @@ def main():
         data_preprocessing_pipeline(data, temperature, buildings)
     )
     logging.info("Training autoencoder...")
-    train_store_autoencoder(
+    autoencoder = train_store_autoencoder(
         df_stat, ds_train, ds_valid, args.output_autoencoder, batch_size=BATCH_SIZE
     )
 
@@ -89,7 +89,7 @@ def main():
         train_df,
         selected_inputs_df,
     ) = ethalon_model_data_preprocessing_pipeline(
-        lstm_model, ds_train, train_df, batch_size=BATCH_SIZE
+        autoencoder, ds_train, train_df, batch_size=BATCH_SIZE
     )
 
     logging.info("Training ethalon model...")
@@ -134,6 +134,8 @@ def train_store_autoencoder(
         shuffle=True,
     )
     store(autoencoder, autoencoder_history, file_names)
+
+    return autoencoder
 
 
 def train_store_ethalon_model(
