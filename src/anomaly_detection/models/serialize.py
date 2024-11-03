@@ -13,8 +13,8 @@ def store(model, model_history, filenames: list[str], path: str = "default"):
     if path == "default":
         path = models_path()
 
-    model_filepath = os.path.join(path, filenames[0])
-    model_history_filepath = os.path.join(path, filenames[1])
+    model_filepath = os.path.join(path, filenames[0] + ".keras")
+    model_history_filepath = os.path.join(path, filenames[1] + ".joblib")
 
     logger.info(f"Saving model in {model_filepath}...")
 
