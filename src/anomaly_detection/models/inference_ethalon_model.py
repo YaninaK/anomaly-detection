@@ -18,7 +18,7 @@ from features.static_sequence_split import \
     generate_static_and_sequence_datasets
 from features.temperature import transform_temperature
 
-from models import ETHALON_MODEL_CONFIG as CONFIG
+from . import ETHALON_MODEL_CONFIG as CONFIG
 
 logger = logging.getLogger(__name__)
 
