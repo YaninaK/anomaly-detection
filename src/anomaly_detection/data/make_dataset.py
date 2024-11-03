@@ -28,17 +28,20 @@ MONTH_DICT = {
 SAVE = True
 
 PATH = ""
+FOLDER_PATH = "data/01_raw/"
 FILE_NAME = "data/02_intermediate/data.parquet.gzip"
 
 
 def load_data(
-    folder_path,
+    folder_path: Optional[str] = None,
     save: Optional[bool] = None,
     month_dict: Optional[dict] = None,
     path: Optional[str] = None,
     file_name: Optional[str] = None,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
+    if folder_path is None:
+        folder_path = FOLDER_PATH
     if save is None:
         save = SAVE
     if month_dict is None:
