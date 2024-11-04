@@ -1,0 +1,5 @@
+tensorflow==2.15
+pandas==2.2.3
+joblib==1.4.2
+matplotlib==3.9.2
+scikit-learn==1.5.2
