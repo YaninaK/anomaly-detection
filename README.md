@@ -4,7 +4,7 @@
 ### Содержание
 
 1. [Постановкa задачи](https://github.com/YaninaK/anomaly-detection/tree/main?tab=readme-ov-file#%D0%B0%D0%BD%D0%B0%D0%BB%D0%B8%D0%B7-%D0%B0%D0%BD%D0%BE%D0%BC%D0%B0%D0%BB%D0%B8%D0%B9-%D0%B2-%D0%BD%D0%B0%D1%87%D0%B8%D1%81%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F%D1%85-%D0%B7%D0%B0-%D1%82%D0%B5%D0%BF%D0%BB%D0%BE%D0%B2%D1%83%D1%8E-%D1%8D%D0%BD%D0%B5%D1%80%D0%B3%D0%B8%D1%8E)
-2. [Решение](https://github.com/YaninaK/anomaly-detection/tree/b1?tab=readme-ov-file#%D1%80%D0%B5%D1%88%D0%B5%D0%BD%D0%B8%D0%B5)
+2. [Решение](https://github.com/YaninaK/anomaly-detection/tree/main?tab=readme-ov-file#%D1%80%D0%B5%D1%88%D0%B5%D0%BD%D0%B8%D0%B5)
     * Исследование данных
     * Обнаружение нулевых значения показаний за тепловую энергию в отопительный период (октябрь-апрель).
     * Равные значения показаний в течение нескольких расчетных периодов.
@@ -72,7 +72,7 @@
 * ```uninvoiced_objects.xlsx``` - объекты без данных по текущему потреблению
 * ```nonunique_objects.xlsx``` - неуникальные адреса объектов
 
-[Здесь](https://github.com/YaninaK/anomaly-detection/blob/main/notebooks/01_Missing_consumption_records.ipynb) ссылка демонстрацию результатов запуска кода.
+[Здесь](https://github.com/YaninaK/anomaly-detection/blob/main/notebooks/01_Missing_consumption_records.ipynb) ссылка на демонстрацию результатов запуска кода.
 
 
 ### Равные значения показаний в течение нескольких расчетных периодов.
@@ -84,7 +84,7 @@
 * ```completely_duplicated.xlsx``` - дублирующиеся входные данные,
 * ```equal_values.xlsx``` - равные значения показаний в течение нескольких расчетных периодов.
 
-[Здесь](https://github.com/YaninaK/anomaly-detection/blob/main/notebooks/02_Duplicates.ipynb) ссылка демонстрацию результатов запуска кода.
+[Здесь](https://github.com/YaninaK/anomaly-detection/blob/main/notebooks/02_Duplicates.ipynb) ссылка на демонстрацию результатов запуска кода.
 
 ###  Снижение/рост показаний в отдельные месяцы по сравнению с показаниями за предыдущие периоды по данному объекту (с учётом фактической температуры наружного воздуха и количества отопительных дней в месяце).
 
@@ -128,6 +128,6 @@
 * ```ethalon_model_v1.keras```
 * ```ethalon_model_training_history_v1.joblib```
 
-[Здесь](https://github.com/YaninaK/anomaly-detection/blob/main/notebooks/04_Apartment_buildings.ipynb) ссылка демонстрацию результатов запуска кода.
+[Здесь](https://github.com/YaninaK/anomaly-detection/blob/main/notebooks/04_Apartment_buildings.ipynb) ссылка на демонстрацию результатов запуска кода.
 
 [Здесь](https://github.com/YaninaK/anomaly-detection/blob/main/scripts/detect_anomalies.py) ссылка на код, генерирующий результаты 1, 2 и 4 блоков, запускающийся из одной точки.
