@@ -121,7 +121,7 @@
 * ```all_periods_anomalies.xlsx``` - объекты с указанием индикаторов аномалий: Hotelling's T-squared, Q residuals, 25% ниже медианы,25% ниже медианы с указанием периода. 
 * и папка ```period_data``` - со всеми данными, размеченными индикаторами аномалий.
 
-Артефакты моделей и история обучения каждой из моделей находится в [папке](https://github.com/YaninaK/anomaly-detection/tree/main/models) ```models```:
+Артефакты моделей и история обучения каждой из моделей попадают в [папку](https://github.com/YaninaK/anomaly-detection/tree/main/models) ```models```, например:
 
 * ```autoencoder_v2.keras```
 * ```autoencoder_training_history_v2.joblib```
